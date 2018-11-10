@@ -28,7 +28,7 @@ float_t p_var_(const std::vector<point_t>& path, float_t p) {
     }
 
     // spatial index:
-    // ind[n,k] = max { dist(path[k << n], path[(k << n) + m]  : 0 <= m < (1 << n) }
+    // ind[n,k] = max { dist(path[k << n], path[(k << n) + m])  : 0 <= m < (1 << n) }
     std::vector < std::vector<float_t> > ind(N + 1);
     for (size_t n=1; n<=N; n++) {
         ind[n].resize( 1 << (N - n), 0.0);
