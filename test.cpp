@@ -14,10 +14,15 @@
 
 bool debug = false;
 
-// specialize p_var_ to R^1 with usual distance
+// p_var requires a vector of points and a metric on points and 
+// a  scalar p specifying the p variation to be computed that is 
+// matching the return type of the distance
+
+// if the points are double in R^1 we use the usual usual distance
 double distR1(double a, double b) { return std::abs(b - a); };
 
-// specialize p_var_ to R^d with Euclidean distance
+// for R^d with the usual Euclidean distance we introduce a point type
+// and metric
 const size_t d = 2;
 typedef std::array<double, d> vec_Xd;
 
@@ -30,7 +35,7 @@ double dist_Xd(vec_Xd a, vec_Xd b) {
 	return std::sqrt(s);
 }
 
-// reference implementation of p-variation
+// reference implementation of p-variation for testing
 double p_var_ref(const std::vector<double>& path, double p) {
 
 	if (path.size() == 0) {
@@ -55,6 +60,7 @@ double p_var_ref(const std::vector<double>& path, double p) {
 	return std::pow(run_p_var.back(), 1. / p);
 }
 
+// constructors for various test paths
 std::vector<double> make_test_path(int steps) {
 	std::vector<double> path(steps + 1);
 	for (size_t n = 0; n < path.size(); n++) {
@@ -81,7 +87,7 @@ std::vector<double> make_brownian_path(double sd, int steps) {
 	return path;
 }
 
-
+// the test code
 int main() {
 	using std::cout;
 
