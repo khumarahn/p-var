@@ -39,7 +39,8 @@ double dist_Xd(vec_Xd a, vec_Xd b) {
 double p_var_ref(const std::vector<double>& path, double p) {
 
 	if (path.size() == 0) {
-		return 0;
+		return 	-std::numeric_limits<double>::infinity();
+
 	}
 
 	// running p-variation in p-th power
@@ -57,7 +58,7 @@ double p_var_ref(const std::vector<double>& path, double p) {
 		run_p_var[n] = r;
 	}
 
-	return std::pow(run_p_var.back(), 1. / p);
+	return run_p_var.back();
 }
 
 // constructors for various test paths
@@ -117,7 +118,7 @@ int main() {
 		cout << "Long periodic path: 0,1,1,4 repeated " << rep << " times\n";
 		for (double p = 1.0; p < 3.01; p += 0.5) {
 			double pv = p_var(path, distR1, p);
-			double pv_ref = 4 * std::pow(2 * rep - 1, 1. / p);
+			double pv_ref = std::pow(4, p) * (2 * rep - 1);
 			cout << "  " << p << "-variation: " << pv
 				<< ", error: " << pv - pv_ref
 				<< "\n";
@@ -172,8 +173,8 @@ int main() {
 		}
 		cout << "\n";
 		for (double p = 1.0; p < 3.01; p += 0.5) {
-			double pv = p_var(path, dist_Xd, d);
-			double pv_ref = (p > 2) ? std::pow(2.0, 0.5 + 1. / p) : std::pow(4, 1. / p);
+			double pv = p_var(path, dist_Xd, p);
+			double pv_ref = (p > 2) ? std::pow(2.0, p*0.5 + 1.) : 4;
 			cout << "  " << p << "-variation: " << pv
 				<< ", error: " << pv - pv_ref
 				<< "\n";
@@ -208,8 +209,8 @@ int main() {
 			cout << ")";
 		}
 		cout << "\n";
-		double pv = p_var(path, dist_Xd, d);
-		double pv_ref = std::pow(2.0, 0.5);
+		double pv = p_var(path, dist_Xd, p);
+		double pv_ref = pow(2.0, 0.5*p);
 		cout << "  " << p << "-variation: " << pv
 			<< ", error: " << pv - pv_ref
 			<< "\n";

@@ -10,12 +10,16 @@
 
 #include <cmath>
 #include <vector>
+#include <numeric>
 
 template <typename float_t, typename point_t, typename  func_t>
 float_t p_var(const std::vector<point_t>& path, func_t dist, float_t p) {
 
+	if (path.size() ==0) {
+		return - std::numeric_limits<float_t>::infinity();
+	}
 	if (path.size() <= 1) {
-		return 0.0;
+		return float_t(0);
 	}
 
 	// running p-variation in p-th power
@@ -77,5 +81,5 @@ float_t p_var(const std::vector<point_t>& path, func_t dist, float_t p) {
 		run_p_var[j] = max_p_var;
 	}
 
-	return std::pow(run_p_var.back(), 1. / p);
+	return run_p_var.back();
 }
