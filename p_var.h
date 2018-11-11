@@ -23,7 +23,7 @@
 
 #include <cmath>
 #include <vector>
-#include <numeric>
+#include <limits>
 #include <type_traits>
 
 template <typename power_t, typename func_t, typename iterator>
