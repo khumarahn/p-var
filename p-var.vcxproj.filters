@@ -28,4 +28,7 @@
     <None Include="LICENSE" />
     <None Include="Makefile" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="test_output_I7-4940MX.txt" />
+  </ItemGroup>
 </Project>

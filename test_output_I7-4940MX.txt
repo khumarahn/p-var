@@ -1,0 +1,52 @@
+*** TEST 1 ***
+Long periodic path: 0,1,1,4 repeated 100000 times
+  1-variation: 799996, error: 0
+  1.5-variation: 13679.8, error: -1.81899e-12
+  2-variation: 1788.85, error: 0
+  2.5-variation: 527.802, error: 0
+  3-variation: 233.921, error: -2.84217e-14
+
+*** TEST 2 ***
+Long monotone path: 0, 0.0001, 0.0002, ... , 1
+  1-variation: 1, error: 0
+  1.5-variation: 1, error: 0
+  2-variation: 1, error: 0
+  2.5-variation: 1, error: 0
+  3-variation: 1, error: 0
+
+*** TEST 3 ***
+Simple path: (0, 0) (1, 0) (1, 1) (0, 1) (0, 0)
+  1-variation: 4, error: 0
+  1.5-variation: 2.51984, error: 0
+  2-variation: 2, error: 0
+  2.5-variation: 1.86607, error: 2.22045e-16
+  3-variation: 1.7818, error: 2.22045e-16
+
+*** TEST 4 ***
+Simple path: (0, 1) (0, 1) (1, 0) (1, 0)
+  3-variation: 1.41421, error: 0
+
+*** TEST 5 ***
+10 random Brownian paths of length 10000 compared to reference
+  max error: 0
+
+*** TEST 6 (BENCHMARK) ***
+  a random Brownian path of length 1 has 3-variation of 0.247299
+  which took 0 seconds to compute
+  a random Brownian path of length 10 has 3-variation of 1.02152
+  which took 0 seconds to compute
+  a random Brownian path of length 100 has 3-variation of 1.01588
+  which took 0 seconds to compute
+  a random Brownian path of length 1000 has 3-variation of 1.76955
+  which took 0.002 seconds to compute
+  a random Brownian path of length 10000 has 3-variation of 1.83991
+  which took 0.023 seconds to compute
+  a random Brownian path of length 100000 has 3-variation of 1.45246
+  which took 0.26 seconds to compute
+  a random Brownian path of length 1000000 has 3-variation of 1.50515
+  which took 3.249 seconds to compute
+  a random Brownian path of length 10000000 has 3-variation of 1.76527
+  which took 59.69 seconds to compute
+
+c:\xxxxxx\pVariation\x64\Release\p-var.exe (process 57096) exited with code 0.
+Press any key to close this window . . .
