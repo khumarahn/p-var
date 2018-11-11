@@ -50,10 +50,10 @@ auto p_var(const std::vector<point_t>& path, func_t dist, power_t p) -> decltype
 	// ind[n,k] = max { dist(path[k << n], path[(k << n) + m])  : 0 <= m < (1 << n) }
 	std::vector < std::vector<float_t> > ind(N + 1);
 	for (size_t n = 1; n <= N; n++) {
-		ind[n].resize(1 << (N - n), 0.0);
+		ind[n].resize(1 << (N - n), float_t(0));
 	}
 
-	float_t max_p_var = 0.0;
+	float_t max_p_var = float_t(0);
 
 	for (size_t j = 1; j < path.size(); j++) {
 		// update ind
@@ -62,7 +62,7 @@ auto p_var(const std::vector<point_t>& path, func_t dist, power_t p) -> decltype
 			ind[n][k] = std::max<float_t>(ind[n][k], dist(path[k << n], path[j]));
 		}
 
-		// compute run_p_var[j]: p-th power of p-variation of path[0..j]
+		// compute run_p_var[j]: the p-variation of path[0..j]
 		size_t m = j;
 		float_t r = 0;
 		do {

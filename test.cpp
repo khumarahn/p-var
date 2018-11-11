@@ -19,7 +19,7 @@ bool debug = false;
 // matching the return type of the distance
 
 // if the points are double in R^1 we use the usual usual distance
-double distR1(double a, double b) { return std::abs(b - a); };
+double dist_R1(double a, double b) { return std::abs(b - a); };
 
 // for R^d with the usual Euclidean distance we introduce a point type
 // and metric
@@ -117,7 +117,7 @@ int main() {
 		}
 		cout << "Long periodic path: 0,1,1,4 repeated " << rep << " times\n";
 		for (double p = 1.0; p < 3.01; p += 0.5) {
-			double pv = p_var(path, distR1, p);
+			double pv = p_var(path, dist_R1, p);
 			double pv_ref = std::pow(4, p) * (2 * rep - 1);
 			cout << "  " << p << "-variation: " << pv
 				<< ", error: " << pv - pv_ref
@@ -137,7 +137,7 @@ int main() {
 			<< path[0] << ", " << path[1] << ", " << path[2]
 			<< ", ... , " << path.back() << "\n";
 		for (double p = 1.0; p < 3.01; p += 0.5) {
-			double pv = p_var(path, distR1, p);
+			double pv = p_var(path, dist_R1, p);
 			double pv_ref = 1.0;
 			cout << "  " << p << "-variation: " << pv
 				<< ", error: " << pv - pv_ref
@@ -227,7 +227,7 @@ int main() {
 		for (size_t c = 0; c < count; c++) {
 			double sd = 1 / sqrt(double(steps));
 			std::vector<double> path = make_brownian_path(sd, steps);
-			double pv = p_var(path, distR1, p);
+			double pv = p_var(path, dist_R1, p);
 			double pv_ref = p_var_ref(path, p);
 			double err = std::abs(pv_ref - pv);
 			max_err = std::max(max_err, err);
@@ -246,7 +246,7 @@ int main() {
 			std::vector<double> path = make_brownian_path(sd, steps);
 
 			clock_t clock_begin = std::clock();
-			double pv = p_var(path, distR1, p);
+			double pv = p_var(path, dist_R1, p);
 			clock_t clock_end = std::clock();
 
 			double elapsed_secs = double(clock_end - clock_begin) / CLOCKS_PER_SEC;
