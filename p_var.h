@@ -110,7 +110,7 @@ auto p_var(iterator path_begin, iterator path_end, func_t dist, power_t p)
 
 template <typename power_t, typename point_t, typename  func_t>
 auto p_var(const std::vector<point_t>& path, func_t dist, power_t p) -> decltype(pow(dist(std::declval<point_t>(), std::declval<point_t>()), p)) {
-	return p_var<power_t, func_t, typename std::vector<point_t>::const_iterator>(path.begin(), path.end(), dist, p);
+	return p_var<power_t, func_t, typename std::vector<point_t>::const_iterator>(std::cbegin(path), std::cend(path), dist, p);
 }
 
 #endif // p_var_h__
