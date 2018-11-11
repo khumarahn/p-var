@@ -1,4 +1,6 @@
 // Copyright 2018 Alexey Korepanov & Terry Lyons
+#ifndef p_var_h__
+#define p_var_h__
 
 // This file contains p_var: a template function for computing p-variation
 // in a metric space.
@@ -96,3 +98,5 @@ auto p_var(const std::vector<point_t>& path, func_t dist, power_t p) -> decltype
 
 	return run_p_var.back();
 }
+
+#endif // p_var_h__
