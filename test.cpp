@@ -15,10 +15,7 @@
 bool debug = false;
 
 // specialize p_var_ to R^1 with usual distance
-double dist(double a, double b) {return std::abs(b-a);};
-double p_var(const std::vector<double>& path, double d) {
-    return p_var_<double, double, dist> (path,d);
-}
+double distR1(double a, double b) {return std::abs(b-a);};
 
 // specialize p_var_ to R^d with Euclidean distance
 const size_t d = 2;
@@ -31,9 +28,6 @@ double dist_Xd(vec_Xd a, vec_Xd b) {
         s += ds * ds;
     }
     return std::sqrt(s);
-}
-double p_var_Xd(const std::vector<vec_Xd>& path, double d) {
-    return p_var_<double, vec_Xd, dist_Xd> (path,d);
 }
 
 // reference implementation of p-variation
@@ -116,7 +110,7 @@ int main() {
         }
         cout << "Long periodic path: 0,1,1,4 repeated " << rep << " times\n";
         for (double p = 1.0; p<3.01; p+=0.5) {
-            double pv = p_var(path,p);
+            double pv = p_var(path, distR1, p);
             double pv_ref = 4 * std::pow(2 * rep - 1, 1./p);
             cout << "  " << p << "-variation: " << pv
                 << ", error: " << pv - pv_ref
@@ -136,7 +130,7 @@ int main() {
             << path[0] << ", " << path[1] << ", " << path[2]
             << ", ... , " << path.back() << "\n";
         for (double p = 1.0; p<3.01; p+=0.5) {
-            double pv = p_var(path,p);
+            double pv = p_var(path, distR1, p);
             double pv_ref = 1.0;
             cout << "  " << p << "-variation: " << pv
                 << ", error: " << pv - pv_ref
@@ -170,7 +164,7 @@ int main() {
         }
         cout << "\n";
         for (double p = 1.0; p<3.01; p+=0.5) {
-            double pv = p_var_Xd(path,p);
+            double pv = p_var(path, dist_Xd, d);
             double pv_ref = (p > 2) ? std::pow(2.0, 0.5 + 1./p) : std::pow(4, 1./p);
             cout << "  " << p << "-variation: " << pv
                 << ", error: " << pv - pv_ref
@@ -204,7 +198,7 @@ int main() {
             cout << ")";
         }
         cout << "\n";
-        double pv = p_var_Xd(path,p);
+        double pv = p_var(path, dist_Xd, d);
         double pv_ref = std::pow(2.0, 0.5);
         cout << "  " << p << "-variation: " << pv
             << ", error: " << pv - pv_ref
@@ -222,7 +216,7 @@ int main() {
         for (size_t c=0; c < count; c++) {
             double sd = 1 / sqrt(double(steps));
             std::vector<double> path = make_brownian_path(sd, steps);
-            double pv = p_var(path,p);
+            double pv = p_var(path, distR1, p);
             double pv_ref = p_var_ref(path,p);
             double err = std::abs(pv_ref - pv);
             max_err = std::max(max_err, err);
@@ -241,7 +235,7 @@ int main() {
             std::vector<double> path = make_brownian_path(sd, steps);
 
             clock_t clock_begin = std::clock();
-            double pv = p_var(path,p);
+            double pv = p_var(path, distR1, p);
             clock_t clock_end = std::clock();
 
             double elapsed_secs = double(clock_end - clock_begin) / CLOCKS_PER_SEC;
