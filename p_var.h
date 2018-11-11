@@ -1,22 +1,35 @@
 // Copyright 2018 Alexey Korepanov & Terry Lyons
 
-// This file contains p_var_: a template function for computing p-variation
+// This file contains p_var: a template function for computing p-variation
 // in a metric space.
-// It requires as arguments:
-// * float_t: base type for distances and p (use float, double or long double)
-// * point_t: data point type
-// * float_t dist(point_t, point_t): distance function (assumed symmetric and
-//   satisfying the triangle inequality)
+//************************************
+// Method:    p_var
+// FullName:  p_var
+// Access:    public 
+// Returns:   auto
+// Qualifier: -> decltype(pow(dist(std::declval<point_t>(), std::declval<point_t>()), p))
+// Parameter: const std::vector<point_t> & path
+// Parameter: func_t dist
+// Parameter: power_t p
+//************************************
+
+// * p_var returns float_t which inherits its definition from  pow(dist(point, point),power)
+// * point_t: the data point type
+// * dist(point_t, point_t): the distance function (assumed symmetric and
+//   satisfying the triangle inequality), consumable by pow
+// * float_t allowing the value -infinity (the p-variation of an empty interval)
+// * power_t the type of p which must be acceptable to pow.  
 
 #include <cmath>
 #include <vector>
 #include <numeric>
+#include <type_traits>
 
-template <typename float_t, typename point_t, typename  func_t>
-float_t p_var(const std::vector<point_t>& path, func_t dist, float_t p) {
-
-	if (path.size() ==0) {
-		return - std::numeric_limits<float_t>::infinity();
+template <typename power_t, typename point_t, typename  func_t>
+auto p_var(const std::vector<point_t>& path, func_t dist, power_t p) -> decltype(pow(dist(std::declval<point_t>(), std::declval<point_t>()), p)) {
+	typedef decltype(pow(dist(std::declval<point_t>(), std::declval<point_t>()), p)) float_t;
+	if (path.size() == 0) {
+		return -std::numeric_limits<float_t>::infinity();
 	}
 	if (path.size() <= 1) {
 		return float_t(0);
