@@ -61,15 +61,7 @@ double p_var_ref(const std::vector<double>& path, double p) {
 	return run_p_var.back();
 }
 
-// constructors for various test paths
-std::vector<double> make_test_path(int steps) {
-	std::vector<double> path(steps + 1);
-	for (size_t n = 0; n < path.size(); n++) {
-		path[n] = n % 3;
-	}
-	return path;
-}
-
+// constructor for random Brownian paths
 unsigned int random_seed(unsigned int & seed) {
 	std::uniform_int_distribution<unsigned int> unif(0, std::numeric_limits<unsigned int>::max());
 	std::random_device rnd_device;
@@ -145,7 +137,7 @@ int main() {
 		}
 	}
 
-	// check a simple path
+	// path: unit square in R^2
 	{
 		cout << "\n*** TEST " << ++test_no << " ***\n";
 		size_t steps = 4;
@@ -172,16 +164,27 @@ int main() {
 			cout << ")";
 		}
 		cout << "\n";
+		cout << "cumulative p-variation:\n";
 		for (double p = 1.0; p < 3.01; p += 0.5) {
-			double pv = p_var(path, distRd, p);
+			cout << "  p=" << p << ": ";
+			double pv = 0;
+			std::vector<vecRd>::iterator it = path.begin();
+			for (;;) {
+				pv = p_var(path.begin(), it, distRd, p);
+				cout << pv;
+				if (it == path.end()) {
+					break;
+				} else {
+					it++;
+					cout << ", ";
+				}
+			}
 			double pv_ref = (p > 2) ? std::pow(2.0, p*0.5 + 1.) : 4;
-			cout << "  " << p << "-variation: " << pv
-				<< ", error: " << pv - pv_ref
-				<< "\n";
+			cout << ";  error at the end: " << pv - pv_ref << "\n";
 		}
 	}
 
-	// another simple path
+	// another short path in R^2
 	{
 		cout << "\n*** TEST " << ++test_no << " ***\n";
 		double p = 3;
