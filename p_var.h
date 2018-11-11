@@ -26,23 +26,22 @@
 #include <limits>
 #include <type_traits>
 
-template <typename power_t, typename func_t, typename iterator>
-auto p_var(iterator path_begin, iterator path_end, func_t dist, power_t p) 
-	-> decltype(pow(dist(typename std::iterator_traits<iterator>::value_type(), typename std::iterator_traits<iterator>::value_type()), p)) {
-
-	typedef decltype(pow(dist(typename std::iterator_traits<iterator>::value_type(), typename std::iterator_traits<iterator>::value_type()), p)) float_t;
-
+template <typename power_t, typename func_t, typename const_iterator_t>
+auto p_var(const_iterator_t path_begin, const_iterator_t path_end, func_t dist, power_t p)
+-> decltype(pow(dist(typename std::iterator_traits<const_iterator_t>::value_type(), typename std::iterator_traits<const_iterator_t>::value_type()), p)) {
+	typedef decltype(pow(dist(typename std::iterator_traits<const_iterator_t>::value_type(), typename std::iterator_traits<const_iterator_t>::value_type()), p)) float_t;
 	// this computation uses only p and two other things:
 	// path size
 	size_t path_size = path_end - path_begin;
 	// distances between path[a] and path[b]:
-	auto path_dist = [&dist,path_begin](size_t a, size_t b) {
+	auto path_dist = [&dist, path_begin](size_t a, size_t b) {
 		return dist(*(path_begin + a), *(path_begin + b));
 	};
 
 	if (path_size == 0) {
 		return -std::numeric_limits<float_t>::infinity();
-	} else if (path_size == 1) {
+	}
+	else if (path_size == 1) {
 		return float_t(0);
 	}
 
@@ -109,8 +108,9 @@ auto p_var(iterator path_begin, iterator path_end, func_t dist, power_t p)
 }
 
 template <typename power_t, typename point_t, typename  func_t>
-auto p_var(const std::vector<point_t>& path, func_t dist, power_t p) -> decltype(pow(dist(std::declval<point_t>(), std::declval<point_t>()), p)) {
-	return p_var<power_t, func_t, typename std::vector<point_t>::const_iterator>(std::cbegin(path), std::cend(path), dist, p);
+auto p_var(const std::vector<point_t>& path, func_t dist, power_t p)
+-> decltype(pow(dist(std::declval<point_t>(), std::declval<point_t>()), p)) {
+	return p_var(std::cbegin(path), std::cend(path), dist, p);
 }
 
 #endif // p_var_h__
