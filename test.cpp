@@ -24,9 +24,9 @@ double dist_R1(double a, double b) { return std::abs(b - a); };
 // for R^d with the usual Euclidean distance we introduce a point type
 // and metric
 const size_t d = 2;
-typedef std::array<double, d> vec_Xd;
+typedef std::array<double, d> vecRd;
 
-double dist_Xd(vec_Xd a, vec_Xd b) {
+double distRd(vecRd a, vecRd b) {
 	double s = 0;
 	for (size_t k = 0; k < d; k++) {
 		double ds = std::abs(b[k] - a[k]);
@@ -149,7 +149,7 @@ int main() {
 	{
 		cout << "\n*** TEST " << ++test_no << " ***\n";
 		size_t steps = 4;
-		std::vector<vec_Xd> path(steps + 1);
+		std::vector<vecRd> path(steps + 1);
 		for (size_t j = 0; j < path.size(); j++) {
 			for (size_t k = 0; k < d; k++) {
 				if (k == 0 && (j % 4 == 1 || j % 4 == 2)) {
@@ -173,7 +173,7 @@ int main() {
 		}
 		cout << "\n";
 		for (double p = 1.0; p < 3.01; p += 0.5) {
-			double pv = p_var(path, dist_Xd, p);
+			double pv = p_var(path, distRd, p);
 			double pv_ref = (p > 2) ? std::pow(2.0, p*0.5 + 1.) : 4;
 			cout << "  " << p << "-variation: " << pv
 				<< ", error: " << pv - pv_ref
@@ -186,7 +186,7 @@ int main() {
 		cout << "\n*** TEST " << ++test_no << " ***\n";
 		double p = 3;
 		size_t steps = 3;
-		std::vector<vec_Xd> path(steps + 1);
+		std::vector<vecRd> path(steps + 1);
 		for (size_t j = 0; j < path.size(); j++) {
 			for (size_t k = 0; k < d; k++) {
 				if (k == 0 && (j % 4 == 2 || j % 4 == 3)) {
@@ -209,7 +209,7 @@ int main() {
 			cout << ")";
 		}
 		cout << "\n";
-		double pv = p_var(path, dist_Xd, p);
+		double pv = p_var(path, distRd, p);
 		double pv_ref = pow(2.0, 0.5*p);
 		cout << "  " << p << "-variation: " << pv
 			<< ", error: " << pv - pv_ref
