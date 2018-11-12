@@ -49,26 +49,28 @@ auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, fu
 	// running p-variation
 	std::vector<float_t> run_p_var(path_size, 0);
 
-	// compute N = ceil(log2(path_size))
-	diff_t N = 1;
+	// compute N = log2(path_size)
+	diff_t N = 0;
 	for (diff_t n = path_size; n >>= 1; ) {
 		N++;
 	}
 
 	// spatial index:
-	// ind[n,k] = max { dist(path[k << n], path[(k << n) + m])  : 0 <= m < (1 << n) }
-	std::vector < std::vector<float_t> > ind(N + 1);
-	for (diff_t n = 1; n <= N; n++) {
-		ind[n].resize(1 << (N - n), float_t(0));
-	}
+	// for 0 <= j < path_size and 1 <= n <= N,
+	//   ind(j, n) = max { path_dist(k, k + m)  :  k = (j << n) >> n  and  0 <= m < (1 << n) }
+	// we store ind(j, n) in ind[ind_n(j,n)] with a suitable function ind_n
+	std::vector<float_t> ind(path_size,0);
+	auto ind_n = [&N](diff_t j, diff_t n) {
+		return (1 << (N-n)) - 1 + (j >> n);
+	};
 
 	float_t max_p_var = float_t(0);
 
 	for (diff_t j = 1; j < path_size; j++) {
 		// update ind
 		for (diff_t n = 1; n <= N; n++) {
-			diff_t k = j >> n;
-			ind[n][k] = std::max<float_t>(ind[n][k], path_dist(k << n, j));
+			diff_t k = (j >> n) << n;
+			ind[ind_n(j,n)] = std::max<float_t>(ind[ind_n(j,n)], path_dist(k, j));
 		}
 
 		// compute run_p_var[j]: the p-variation of path[0..j]
@@ -78,17 +80,14 @@ auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, fu
 			// reduce m
 			diff_t n = 0;
 			while (n < N) {
-				diff_t nn = n + 1,
-					kk = m >> nn,
-					mm = kk << nn;
-				if (r < path_dist(mm, j) + ind[nn][kk]) {
+				m = (m >> n) << n;
+				if (r < path_dist(m, j) + ind[ind_n(m, n+1)]) {
 					break;
 				}
 				else {
 					n++;
 				}
 			}
-			m = (m >> n) << n;
 			if (m > 0) {
 				m--;
 			}
