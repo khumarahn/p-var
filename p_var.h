@@ -30,11 +30,12 @@ template <typename power_t, typename func_t, typename const_iterator_t>
 auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, func_t dist)
 -> decltype(pow(dist(typename std::iterator_traits<const_iterator_t>::value_type(), typename std::iterator_traits<const_iterator_t>::value_type()), p)) {
 	typedef decltype(pow(dist(typename std::iterator_traits<const_iterator_t>::value_type(), typename std::iterator_traits<const_iterator_t>::value_type()), p)) float_t;
+	typedef typename std::iterator_traits<const_iterator_t>::difference_type diff_t;
 	// this computation uses only p and two other things:
 	// path size
-	size_t path_size = path_end - path_begin;
+	diff_t path_size = path_end - path_begin;
 	// distances between path[a] and path[b]:
-	auto path_dist = [&dist, path_begin](size_t a, size_t b) {
+	auto path_dist = [&dist, path_begin](diff_t a, diff_t b) {
 		return dist(*(path_begin + a), *(path_begin + b));
 	};
 
@@ -49,35 +50,35 @@ auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, fu
 	std::vector<float_t> run_p_var(path_size, 0);
 
 	// compute N = ceil(log2(path_size))
-	size_t N = 1;
-	for (size_t n = path_size; n >>= 1; ) {
+	diff_t N = 1;
+	for (diff_t n = path_size; n >>= 1; ) {
 		N++;
 	}
 
 	// spatial index:
 	// ind[n,k] = max { dist(path[k << n], path[(k << n) + m])  : 0 <= m < (1 << n) }
 	std::vector < std::vector<float_t> > ind(N + 1);
-	for (size_t n = 1; n <= N; n++) {
+	for (diff_t n = 1; n <= N; n++) {
 		ind[n].resize(1 << (N - n), float_t(0));
 	}
 
 	float_t max_p_var = float_t(0);
 
-	for (size_t j = 1; j < path_size; j++) {
+	for (diff_t j = 1; j < path_size; j++) {
 		// update ind
-		for (size_t n = 1; n <= N; n++) {
-			size_t k = j >> n;
+		for (diff_t n = 1; n <= N; n++) {
+			diff_t k = j >> n;
 			ind[n][k] = std::max<float_t>(ind[n][k], path_dist(k << n, j));
 		}
 
 		// compute run_p_var[j]: the p-variation of path[0..j]
-		size_t m = j;
+		diff_t m = j;
 		float_t r = 0;
 		do {
 			// reduce m
-			size_t n = 0;
+			diff_t n = 0;
 			while (n < N) {
-				size_t nn = n + 1,
+				diff_t nn = n + 1,
 					kk = m >> nn,
 					mm = kk << nn;
 				if (r < path_dist(mm, j) + ind[nn][kk]) {
