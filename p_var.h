@@ -7,11 +7,11 @@
  * in a metric space.
  *
  * Usage:
- * 1. p_var(path, dist, p)
+ * 1. p_var(path, p, dist)
  * where path is a vector, dist is a distance function and p is a positive real number.
- * 2. p_var(iterator_begin, iterator_end, dist, p)
+ * 2. p_var(iterator_begin, iterator_end, p, dist)
  * if the path is in a container with random access iterators.
- * p_var(path, dist, p) is the same as p_var(path.begin(), path.end(), dist, p)
+ * p_var(path, p, dist) is the same as p_var(path.begin(), path.end(), p, dist)
  * See test.cpp for examples and benchmarks.
  *
  * Notes:
@@ -27,7 +27,7 @@
 #include <type_traits>
 
 template <typename power_t, typename func_t, typename const_iterator_t>
-auto p_var(const_iterator_t path_begin, const_iterator_t path_end, func_t dist, power_t p)
+auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, func_t dist)
 -> decltype(pow(dist(typename std::iterator_traits<const_iterator_t>::value_type(), typename std::iterator_traits<const_iterator_t>::value_type()), p)) {
 	typedef decltype(pow(dist(typename std::iterator_traits<const_iterator_t>::value_type(), typename std::iterator_traits<const_iterator_t>::value_type()), p)) float_t;
 	// this computation uses only p and two other things:
@@ -108,9 +108,9 @@ auto p_var(const_iterator_t path_begin, const_iterator_t path_end, func_t dist, 
 }
 
 template <typename power_t, typename point_t, typename  func_t>
-auto p_var(const std::vector<point_t>& path, func_t dist, power_t p)
+auto p_var(const std::vector<point_t>& path, power_t p, func_t dist)
 -> decltype(pow(dist(std::declval<point_t>(), std::declval<point_t>()), p)) {
-	return p_var(std::cbegin(path), std::cend(path), dist, p);
+	return p_var(std::cbegin(path), std::cend(path), p, dist);
 }
 
 #endif // p_var_h__
