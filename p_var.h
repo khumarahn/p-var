@@ -78,15 +78,14 @@ auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, fu
 		float_t r = 0;
 		do {
 			// reduce m
-			diff_t n = 0;
-			while (n < N) {
-				m = (m >> n) << n;
-				if (r < path_dist(m, j) + ind[ind_n(m, n+1)]) {
+			diff_t mm = m;
+			// n = N,...,0: decreasing because cache friendly
+			for(diff_t n=N; ;) {
+				m = (mm >> n) << n;
+				if (n==0 || r > path_dist(m, j) + ind[ind_n(m, n)]) {
 					break;
 				}
-				else {
-					n++;
-				}
+				n--;
 			}
 			if (m > 0) {
 				m--;
