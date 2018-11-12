@@ -12,11 +12,8 @@
 
 #include "p_var.h"
 
-bool debug = false;
-
-// p_var requires a vector of points and a metric on points and 
-// a  scalar p specifying the p variation to be computed that is 
-// matching the return type of the distance
+// p_var requires a vector of points, a distance function
+// and a scalar p specifying the p-variation to be computed
 
 // if the points are double in R^1 we use the usual usual distance
 double distR1(double a, double b) { return std::abs(b - a); };
@@ -40,10 +37,9 @@ double p_var_ref(const std::vector<double>& path, double p) {
 
 	if (path.size() == 0) {
 		return 	-std::numeric_limits<double>::infinity();
-
 	}
 
-	// running p-variation in p-th power
+	// running p-variation
 	std::vector<double> run_p_var(path.size(), 0.0);
 
 	for (size_t n = 1; n < path.size(); n++) {
@@ -258,4 +254,6 @@ int main() {
 				<< "  which took " << elapsed_secs << " seconds to compute\n";
 		}
 	}
+
+	return 0;
 }
