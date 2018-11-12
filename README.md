@@ -37,8 +37,8 @@ int main () {
 	path[0][0] = path[0][1] = 0;
 	path[1][0] = path[1][1] = 1;
 	
-	// get its p-variation
-	double pv = p_var(path, dist, 3); 
+	// get its 3-variation
+	double pv = p_var(path, 3, dist); 
 	std::cout << pv;
 }
 
