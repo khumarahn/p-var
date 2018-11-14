@@ -59,7 +59,7 @@ auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, fu
 	// for 0 <= j < path_size and 1 <= n <= N,
 	//   ind(j, n) = max { path_dist(k, k + m)  :  k = (j << n) >> n  and  0 <= m < (1 << n) }
 	// we store ind(j, n) in ind[ind_n(j,n)] with a suitable function ind_n
-	std::vector<float_t> ind(path_size,0);
+	std::vector<float_t> ind(path_size, 0);
 	auto ind_n = [&N](diff_t j, diff_t n) {
 		return (1 << (N-n)) - 1 + (j >> n);
 	};
@@ -70,35 +70,69 @@ auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, fu
 		// update ind
 		for (diff_t n = 1; n <= N; n++) {
 			diff_t k = (j >> n) << n;
-			ind[ind_n(j,n)] = std::max<float_t>(ind[ind_n(j,n)], path_dist(k, j));
+			float_t &i = ind[ind_n(j, n)];
+			i = std::max<float_t>(i, path_dist(k, j));
 		}
 
-		// compute run_p_var[j]: the p-variation of path[0..j]
-		diff_t m = j;
-		float_t r = 0;
-		do {
-			// reduce m
-			diff_t mm = m;
-			// n = N,...,0: decreasing because cache friendly
-			for(diff_t n=N; ;) {
-				m = (mm >> n) << n;
-				if (n==0 || r > path_dist(m, j) + ind[ind_n(m, n)]) {
+		// compute max_p_var = p-variation of path[0..j] as
+		//   max{run_p_var[m] + path_dist(m, j)^p}
+		// as m goes through j-1,...,0
+		diff_t m = j - 1;
+		float_t delta = 0;
+		diff_t delta_m = j;
+		for (diff_t n=N;;) {
+			diff_t k = (m >> n) << n;
+			// using spatial index, we skip all m >= k when n > 0 and
+			// ind[ind_n(m, n)] + path_dist(k, j) < (max_p_var - run_p_var[m])^(1/p)
+			bool skip = false;
+			if (n > 0) {
+				float_t id = ind[ind_n(m, n)] + path_dist(k, j);
+				if (delta >= id) {
+					skip = true;
+				}
+				else if (m < delta_m) {
+					delta = std::pow(max_p_var - run_p_var[m], 1. / p);
+					delta_m = m;
+					if (delta >= id) {
+						skip = true;
+					}
+				}
+			}
+
+			if (skip) {
+				if (k > 0) {
+					m = k - 1;
+					while (n < N && (k>>n) % 2 == 0) {
+						n++;
+					}
+				}
+				else {
 					break;
 				}
-				n--;
 			}
-			if (m > 0) {
-				m--;
-			}
+			else {
+				if (n > 1) {
+					n--;
+				}
+				else {
+					float_t d = path_dist(m, j);
+					if (d > delta) {
+						max_p_var = std::max<float_t>(max_p_var, run_p_var[m] + std::pow(d, p));
+					}
 
-			// check if we improve p-variation
-			float_t d = path_dist(m, j);
-			if (d > r) {
-				max_p_var = std::max<float_t>(max_p_var, run_p_var[m] + std::pow(d, p));
+					if (m > 0) {
+						n = 0;
+						while (n < N  &&  (m>>n) % 2 == 0) {
+							n++;
+						}
+						m--;
+					}
+					else {
+						break;
+					}
+				}
 			}
-			r = std::pow(max_p_var - run_p_var[m], 1. / p);
-
-		} while (m != 0);
+		}
 
 		run_p_var[j] = max_p_var;
 	}
