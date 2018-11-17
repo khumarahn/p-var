@@ -11,15 +11,6 @@
 #include <ctime>
 
 #include "p_var.h"
-#include "../test/dist.h"
-
-
-
-template <typename power_t, typename point_t>
-auto p_var(const std::vector<point_t>& path, power_t p)
--> decltype(pow(dist(std::declval<point_t>(), std::declval<point_t>()), p)) {
-	return p_var(std::cbegin(path), std::cend(path), p, dist);
-}
 
 // p_var requires a vector of points, a distance function
 // and a scalar p specifying the p-variation to be computed
@@ -114,7 +105,7 @@ int main() {
 		}
 		cout << "Long periodic path: 0,1,1,4 repeated " << rep << " times\n";
 		for (double p = 1.0; p < 3.01; p += 0.5) {
-			double pv = p_var(path, p);
+			double pv = p_var(path, p, distR1);
 			double pv_ref = std::pow(4, p) * (2 * rep - 1);
 			cout << "  " << p << "-variation: " << pv
 				<< ", error: " << pv - pv_ref
