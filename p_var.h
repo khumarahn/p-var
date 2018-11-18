@@ -25,18 +25,20 @@
 #include <vector>
 #include <limits>
 #include <type_traits>
-
-template <typename power_t, typename func_t, typename const_iterator_t>
-auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, func_t dist)
--> decltype(pow(dist(typename std::iterator_traits<const_iterator_t>::value_type(), typename std::iterator_traits<const_iterator_t>::value_type()), p)) {
-	typedef decltype(pow(dist(typename std::iterator_traits<const_iterator_t>::value_type(), typename std::iterator_traits<const_iterator_t>::value_type()), p)) float_t;
+#include "dist.h"
+#define DIST_FUNC_TYPE decltype(dist(std::declval<typename std::iterator_traits<const_iterator_t>::value_type>(), std::declval<typename std::iterator_traits<const_iterator_t>::value_type>()))(*) (const typename std::iterator_traits<const_iterator_t>::value_type &, const typename std::iterator_traits<const_iterator_t>::value_type &)
+template <typename power_t, typename const_iterator_t, typename func_t = DIST_FUNC_TYPE>
+#undef DIST_FUNC_TYPE
+auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, func_t dist_ = dist)
+-> decltype(pow(dist_(typename std::iterator_traits<const_iterator_t>::value_type(), typename std::iterator_traits<const_iterator_t>::value_type()), p)) {
+	typedef decltype(pow(dist_(typename std::iterator_traits<const_iterator_t>::value_type(), typename std::iterator_traits<const_iterator_t>::value_type()), p)) float_t;
 	typedef typename std::iterator_traits<const_iterator_t>::difference_type diff_t;
 	// this computation uses only p and two other things:
 	// path size
 	diff_t path_size = path_end - path_begin;
 	// distances between path[a] and path[b]:
-	auto path_dist = [&dist, path_begin](diff_t a, diff_t b) {
-		return dist(*(path_begin + a), *(path_begin + b));
+	auto path_dist = [&dist_, path_begin](diff_t a, diff_t b) {
+		return dist_(*(path_begin + a), *(path_begin + b));
 	};
 
 	if (path_size == 0) {
@@ -140,10 +142,12 @@ auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, fu
 	return run_p_var.back();
 }
 
-template <typename power_t, typename point_t, typename  func_t>
-auto p_var(const std::vector<point_t>& path, power_t p, func_t dist)
--> decltype(pow(dist(std::declval<point_t>(), std::declval<point_t>()), p)) {
-	return p_var(std::cbegin(path), std::cend(path), p, dist);
+#define DIST_FUNC_TYPE decltype(dist(std::declval<point_t>(), std::declval<point_t>()))(*) (const point_t &, const point_t &)
+template <typename power_t, typename point_t, typename  func_t=DIST_FUNC_TYPE>
+#undef DIST_FUNC_TYPE
+auto p_var(const std::vector<point_t>& path, power_t p, func_t dist_ = dist)
+-> decltype(pow(dist_(std::declval<point_t>(), std::declval<point_t>()), p)) {
+	return p_var(std::cbegin(path), std::cend(path), p, dist_);
 }
 
 #endif // p_var_h__

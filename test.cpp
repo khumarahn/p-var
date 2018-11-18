@@ -76,12 +76,36 @@ std::vector<double> make_brownian_path(double sd, int steps) {
 	return path;
 }
 
+void test_dist_template()
+{
+	std::vector<float> X = { 1., 2., 3. };
+	std::vector<float> Y = { 2., 4., 5. };
+	std::vector<std::vector<double>> XX = { {1., 2.}, { 3.,0.} };
+	std::vector<std::vector<double>> YY = { {2., 4.}, { 5.,0.} };
+	std::complex<float> xc[]{ 1.,2.,3. };
+	std::complex<float> yc[]{ 2.,4.,5. };
+	double x[]{ 1.,2.,3. };
+	double y[]{ 2.,4.,5. };
+	int xi[]{ 1,2,3 };
+	int yi[]{ 2,4,5 };
+	std::cout <<
+		dist(X, Y) << " " <<
+		dist(XX, YY) << " " <<
+		dist(xc, yc) << " " <<
+		dist(x, y) << " " <<
+		dist(xi, yi) << " " <<
+		dist(0., 3.) << " " <<
+		dist(0, 3);
+}
+
 // the test code
 int main() {
 	using std::cout;
 
+	// run tests on the default generic distance function
+	test_dist_template(); // all answers should be three
+	
 	int test_no = 0;
-
 	// check a long periodic path 0,1,4,0,1,4,...
 	{
 		cout << "*** TEST " << ++test_no << " ***\n";
@@ -105,7 +129,8 @@ int main() {
 		}
 		cout << "Long periodic path: 0,1,1,4 repeated " << rep << " times\n";
 		for (double p = 1.0; p < 3.01; p += 0.5) {
-			double pv = p_var(path, p, distR1);
+			//double pv = p_var(path, p, distR1);
+			double pv = p_var(path, p);
 			double pv_ref = std::pow(4, p) * (2 * rep - 1);
 			cout << "  " << p << "-variation: " << pv
 				<< ", error: " << pv - pv_ref
@@ -125,7 +150,8 @@ int main() {
 			<< path[0] << ", " << path[1] << ", " << path[2]
 			<< ", ... , " << path.back() << "\n";
 		for (double p = 1.0; p < 3.01; p += 0.5) {
-			double pv = p_var(path, p, distR1);
+			//double pv = p_var(path, p, distR1);
+			double pv = p_var(path, p);
 			double pv_ref = 1.0;
 			cout << "  " << p << "-variation: " << pv
 				<< ", error: " << pv - pv_ref
@@ -166,11 +192,13 @@ int main() {
 			double pv = 0;
 			std::vector<vecRd>::iterator it = path.begin();
 			for (;;) {
-				pv = p_var(path.begin(), it, p, distRd);
+				//pv = p_var(path.begin(), it, p, distRd);
+				pv = p_var(path.begin(), it, p);
 				cout << pv;
 				if (it == path.end()) {
 					break;
-				} else {
+				}
+				else {
 					it++;
 					cout << ", ";
 				}
@@ -208,7 +236,8 @@ int main() {
 			cout << ")";
 		}
 		cout << "\n";
-		double pv = p_var(path, p, distRd);
+		//double pv = p_var(path, p, distRd);
+		double pv = p_var(path, p);
 		double pv_ref = pow(2.0, 0.5*p);
 		cout << "  " << p << "-variation: " << pv
 			<< ", error: " << pv - pv_ref
@@ -226,7 +255,8 @@ int main() {
 		for (size_t c = 0; c < count; c++) {
 			double sd = 1 / sqrt(double(steps));
 			std::vector<double> path = make_brownian_path(sd, steps);
-			double pv = p_var(path, p, distR1);
+			//double pv = p_var(path, p, distR1);
+			double pv = p_var(path, p);
 			double pv_ref = p_var_ref(path, p);
 			double err = std::abs(pv_ref - pv);
 			max_err = std::max(max_err, err);
@@ -245,7 +275,8 @@ int main() {
 			std::vector<double> path = make_brownian_path(sd, steps);
 
 			clock_t clock_begin = std::clock();
-			double pv = p_var(path, p, distR1);
+			//double pv = p_var(path, p, distR1);
+			double pv = p_var(path, p);
 			clock_t clock_end = std::clock();
 
 			double elapsed_secs = double(clock_end - clock_begin) / CLOCKS_PER_SEC;

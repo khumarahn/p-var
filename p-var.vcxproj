@@ -111,6 +111,7 @@
     <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="dist.h" />
     <ClInclude Include="p_var.h" />
   </ItemGroup>
   <ItemGroup>

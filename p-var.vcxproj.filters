@@ -23,6 +23,9 @@
     <ClInclude Include="p_var.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="dist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="LICENSE" />
