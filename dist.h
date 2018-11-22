@@ -25,7 +25,7 @@ namespace kdfghaglhk
 	auto euclidean_distance(point_t a, point_t b, rank<10>) ->
 	typename std::enable_if<std::is_integral<point_t>::value, double>::type
 	{
-		return decltype(sqrt(std::abs(b - a)))(std::abs(b - a));
+		return decltype(std::sqrt(std::abs(b - a)))(std::abs(b - a));
 	}
 	
 	// scalar type
@@ -39,7 +39,7 @@ namespace kdfghaglhk
 	// (nested) vector or array type
 	template<typename point_t>
 	auto euclidean_distance(const point_t & a, const point_t & b, rank<0>) ->
-	decltype(sqrt(dist(*std::cbegin(a), *std::cbegin(a))))
+	decltype(std::sqrt(dist(*std::cbegin(a), *std::cbegin(a))))
 	{
 		typedef decltype(dist(*std::begin(a), *std::begin(a))) return_t;
 		return std::sqrt(std::inner_product(std::begin(a), std::end(a), std::begin(b), return_t(0)

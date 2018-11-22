@@ -1,6 +1,7 @@
 // Copyright 2018 Alexey Korepanov & Terry Lyons
 
 #include <iostream>
+#include <iomanip>
 #include <random>
 #include <cmath>
 #include <numeric>
@@ -11,6 +12,7 @@
 #include <ctime>
 
 #include "p_var.h"
+#include "p_var_real.h"
 
 // p_var requires a vector of points, a distance function
 // and a scalar p specifying the p-variation to be computed
@@ -82,8 +84,8 @@ void test_dist_template()
 	std::vector<float> Y = { 2., 4., 5. };
 	std::vector<std::vector<double>> XX = { {1., 2.}, { 3.,0.} };
 	std::vector<std::vector<double>> YY = { {2., 4.}, { 5.,0.} };
-	std::complex<float> xc[]{ 1.,2.,3. };
-	std::complex<float> yc[]{ 2.,4.,5. };
+	//std::complex<float> xc[]{ 1.,2.,3. };
+	//std::complex<float> yc[]{ 2.,4.,5. };
 	double x[]{ 1.,2.,3. };
 	double y[]{ 2.,4.,5. };
 	int xi[]{ 1,2,3 };
@@ -91,7 +93,7 @@ void test_dist_template()
 	std::cout <<
 		dist(X, Y) << " " <<
 		dist(XX, YY) << " " <<
-		dist(xc, yc) << " " <<
+		//dist(xc, yc) << " " <<
 		dist(x, y) << " " <<
 		dist(xi, yi) << " " <<
 		dist(0., 3.) << " " <<
@@ -101,14 +103,19 @@ void test_dist_template()
 // the test code
 int main() {
 	using std::cout;
+	int test_no = 0;
 
 	// run tests on the default generic distance function
-	test_dist_template(); // all answers should be three
-	
-	int test_no = 0;
-	// check a long periodic path 0,1,4,0,1,4,...
 	{
 		cout << "*** TEST " << ++test_no << " ***\n";
+		cout << "Testing dist(a,b), all answers should be three: ";
+		test_dist_template();
+		cout << "\n";
+	}
+	
+	// check a long periodic path 0,1,4,0,1,4,...
+	{
+		cout << "\n*** TEST " << ++test_no << " ***\n";
 		size_t rep = 100000;
 		std::vector<double> path(rep * 4);
 		for (size_t j = 0; j < path.size(); j++) {
@@ -248,7 +255,7 @@ int main() {
 	{
 		cout << "\n*** TEST " << ++test_no << " ***\n";
 		double p = 3;
-		size_t count = 10;
+		size_t count = 100;
 		size_t steps = 10000;
 		double max_err = 0.0;
 
@@ -257,7 +264,7 @@ int main() {
 			std::vector<double> path = make_brownian_path(sd, steps);
 			//double pv = p_var(path, p, distR1);
 			double pv = p_var(path, p);
-			double pv_ref = p_var_ref(path, p);
+			double pv_ref = p_var_real::pvar(path, p);
 			double err = std::abs(pv_ref - pv);
 			max_err = std::max(max_err, err);
 		}
@@ -270,19 +277,35 @@ int main() {
 	{
 		cout << "\n*** TEST " << ++test_no << " (BENCHMARK) ***\n";
 		double p = 3;
+		cout << "Computing p-variation with p=" << p << " for long random Brownian paths,\n"
+			<< "benchmarking against the real line specific method\n"
+			<< std::setw(15) << "Length"
+			<< std::setw(15) << "p-variation"
+			<< std::setw(15) << "Seconds"
+			<< std::setw(15) << "R mthd secs"
+			<< std::setw(15) << "Answers diff"
+			<< "\n";
 		for (size_t steps = 1; steps <= 10000000; steps *= 10) {
 			double sd = 1 / sqrt(double(steps));
 			std::vector<double> path = make_brownian_path(sd, steps);
 
 			clock_t clock_begin = std::clock();
-			//double pv = p_var(path, p, distR1);
 			double pv = p_var(path, p);
 			clock_t clock_end = std::clock();
 
+			clock_t ref_clock_begin = std::clock();
+			double pv_ref = p_var_real::pvar(path, p);
+			clock_t ref_clock_end = std::clock();
+
 			double elapsed_secs = double(clock_end - clock_begin) / CLOCKS_PER_SEC;
-			cout << "  a random Brownian path of length " << steps
-				<< " has " << p << "-variation of " << pv << "\n"
-				<< "  which took " << elapsed_secs << " seconds to compute\n";
+			double ref_elapsed_secs = double(ref_clock_end - ref_clock_begin) / CLOCKS_PER_SEC;
+
+			cout	<< std::setw(15) << steps
+				<< std::setw(15) << pv
+				<< std::setw(15) << elapsed_secs
+				<< std::setw(15) << ref_elapsed_secs
+				<< std::setw(15) << pv - pv_ref
+				<< "\n";
 		}
 	}
 
