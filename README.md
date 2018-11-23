@@ -1,7 +1,7 @@
 # P-var
 Efficient computation of p-variation in metric spaces.
 
-Let p≥1. For a discrete time path X<sub>0</sub>,...,X<sub>N</sub> with in a metric space with distance d, its p-variation is
+Let p≥1. For a discrete time path X<sub>0</sub>,...,X<sub>N</sub> in a metric space with distance d, its p-variation is
 <p align="center">
   sup Σ<sub>k</sub> d(X<sub>n<sub>k</sub></sub>, X<sub>n<sub>k-1</sub></sub>)<sup>p</sup>,
 </p>
@@ -52,4 +52,4 @@ Our method is fast on data such as simulated Brownian paths, with complexity of
 perhaps N log(N). But its worst case complexity is N<sup>2</sup>.
 This happens in pathological situations such as monotone paths in R.
 The [one-dimensional method](https://link.springer.com/article/10.1007/s10986-018-9414-3)
-works with monotone paths much faster.
+works with such paths much faster.
