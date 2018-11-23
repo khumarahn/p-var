@@ -17,7 +17,7 @@
 
 using p_var_ns::p_var;
 
-// usial distance in R^1
+// usual distance in R^1
 double distR1(double a, double b) { return std::abs(b - a); };
 
 // R^d with Euclidean distance
