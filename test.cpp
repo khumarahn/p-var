@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <random>
 #include <cmath>
+#include <complex>
 #include <numeric>
 #include <algorithm>
 #include <utility>
@@ -14,17 +15,14 @@
 #include "p_var.h"
 #include "p_var_real.h"
 
-// p_var requires a vector of points, a distance function
-// and a scalar p specifying the p-variation to be computed
+using p_var_ns::p_var;
 
-// if the points are double in R^1 we use the usual usual distance
+// usial distance in R^1
 double distR1(double a, double b) { return std::abs(b - a); };
 
-// for R^d with the usual Euclidean distance we introduce a point type
-// and metric
+// R^d with Euclidean distance
 const size_t d = 2;
 typedef std::array<double, d> vecRd;
-
 double distRd(vecRd a, vecRd b) {
 	double s = 0;
 	for (size_t k = 0; k < d; k++) {
@@ -47,7 +45,7 @@ double p_var_ref(const std::vector<double>& path, double p) {
 	for (size_t n = 1; n < path.size(); n++) {
 		// compute run_p_var[n]
 		double r = 0;
-		for (size_t k = n; k-- > 0; ) { // for k in {n-1,...,0}
+		for (size_t k = 0; k < n; k++) {
 			// try last step [k,n]
 			double prev = run_p_var[k];
 			double step = std::pow(std::abs(path[n] - path[k]), p);
@@ -80,12 +78,13 @@ std::vector<double> make_brownian_path(double sd, int steps) {
 
 void test_dist_template()
 {
+	using p_var_ns::p_var_dist_ns::dist;
 	std::vector<float> X = { 1., 2., 3. };
 	std::vector<float> Y = { 2., 4., 5. };
 	std::vector<std::vector<double>> XX = { {1., 2.}, { 3.,0.} };
 	std::vector<std::vector<double>> YY = { {2., 4.}, { 5.,0.} };
-	//std::complex<float> xc[]{ 1.,2.,3. };
-	//std::complex<float> yc[]{ 2.,4.,5. };
+	std::complex<float> xc[]{ 1.,2.,3. };
+	std::complex<float> yc[]{ 2.,4.,5. };
 	double x[]{ 1.,2.,3. };
 	double y[]{ 2.,4.,5. };
 	int xi[]{ 1,2,3 };
@@ -93,7 +92,7 @@ void test_dist_template()
 	std::cout <<
 		dist(X, Y) << " " <<
 		dist(XX, YY) << " " <<
-		//dist(xc, yc) << " " <<
+		dist(xc, yc) << " " <<
 		dist(x, y) << " " <<
 		dist(xi, yi) << " " <<
 		dist(0., 3.) << " " <<
@@ -112,7 +111,7 @@ int main() {
 		test_dist_template();
 		cout << "\n";
 	}
-	
+
 	// check a long periodic path 0,1,4,0,1,4,...
 	{
 		cout << "\n*** TEST " << ++test_no << " ***\n";

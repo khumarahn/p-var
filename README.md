@@ -21,8 +21,9 @@ Below is a minimal working example. Details and important notes are in [`p_var.h
 #include <vector>
 #include <array>
 
-// p_var is a template, so it is enough to include the header
+// p_var is a one file header-only library
 #include "p_var.h"
+using p_var_ns::p_var;
 
 // define a type for data points, in this case R^2
 typedef std::array<double, 2> vecR2;
@@ -33,18 +34,14 @@ double dist(vecR2 a, vecR2 b) {
 }
 
 int main () {
-	// create and initialize a path
-	std::vector<vecR2> path(2);
-	path[0][0] = path[0][1] = 0;
-	path[1][0] = path[1][1] = 1;
+	// create a path
+	std::vector<vecR2> path({{0,0}, {1,1}});
 
-	// get its 3-variation
-	double pv = p_var(path, 3, dist);
-	std::cout << pv << std::endl;
+	std::cout << "3-variation wrt L^1 distance: " << p_var(path, 3, dist) << std::endl;
+	std::cout << "3-variation wrt Euclidean distance: " << p_var(path, 3) << std::endl;
 
 	return 0;
 }
-
 ```
 
 ## Limitations
