@@ -18,18 +18,18 @@
 using p_var_ns::p_var;
 
 // usual distance in R^1
-double distR1(double a, double b) { return std::abs(b - a); };
+double distR1(double a, double b) { return std::abs(b - a); }
 
-// R^d with Euclidean distance
+// R^d with L^1 distance
 const size_t d = 2;
 typedef std::array<double, d> vecRd;
 double distRd(vecRd a, vecRd b) {
 	double s = 0;
 	for (size_t k = 0; k < d; k++) {
 		double ds = std::abs(b[k] - a[k]);
-		s += ds * ds;
+		s += ds;
 	}
-	return std::sqrt(s);
+	return s;
 }
 
 // reference implementation of p-variation for testing
@@ -168,25 +168,11 @@ int main() {
 	// path: unit square in R^2
 	{
 		cout << "\n*** TEST " << ++test_no << " ***\n";
-		size_t steps = 4;
-		std::vector<vecRd> path(steps + 1);
-		for (size_t j = 0; j < path.size(); j++) {
-			for (size_t k = 0; k < d; k++) {
-				if (k == 0 && (j % 4 == 1 || j % 4 == 2)) {
-					path[j][k] = 1;
-				}
-				else if (k == 1 && (j % 4 == 2 || j % 4 == 3)) {
-					path[j][k] = 1;
-				}
-				else {
-					path[j][k] = 0;
-				}
-			}
-		}
+		std::array<std::array<double, 2>, 5> path = {{{0,0}, {1,0}, {1,1}, {0,1}, {0,0}}};
 		cout << "Simple path:";
 		for (size_t j = 0; j < path.size(); j++) {
 			cout << " (" << path[j][0];
-			for (size_t k = 1; k < d; k++) {
+			for (size_t k = 1; k < 2; k++) {
 				cout << ", " << path[j][k];
 			}
 			cout << ")";
@@ -196,9 +182,8 @@ int main() {
 		for (double p = 1.0; p < 3.01; p += 0.5) {
 			cout << "  p=" << p << ": ";
 			double pv = 0;
-			std::vector<vecRd>::iterator it = path.begin();
+			auto it = path.begin();
 			for (;;) {
-				//pv = p_var(path.begin(), it, p, distRd);
 				pv = p_var(path.begin(), it, p);
 				cout << pv;
 				if (it == path.end()) {
@@ -242,11 +227,15 @@ int main() {
 			cout << ")";
 		}
 		cout << "\n";
-		//double pv = p_var(path, p, distRd);
-		double pv = p_var(path, p);
-		double pv_ref = pow(2.0, 0.5*p);
-		cout << "  " << p << "-variation: " << pv
+		double pv = p_var(path, p, distRd);
+		double pv_ref = pow(2.0, p);
+		cout << "  " << p << "-variation wrt L^1 distance: " << pv
 			<< ", error: " << pv - pv_ref
+			<< "\n";
+		double pv2 = p_var(path, p);
+		double pv_ref2 = pow(2.0, 0.5*p);
+		cout << "  " << p << "-variation wrt Euclidean distance: " << pv2
+			<< ", error: " << pv2 - pv_ref2
 			<< "\n";
 	}
 

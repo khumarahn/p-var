@@ -1,10 +1,11 @@
 .PHONY: default short-test graph
 
 default:
-	g++ test.cpp p_var_real.cpp -Wall -O3 -march=native -o test.x
+	g++     test.cpp p_var_real.cpp -Wall -pedantic -O3 -march=native -o test.gcc.x
+	clang++ test.cpp p_var_real.cpp -Wall -pedantic -O3 -march=native -o test.clang.x
 
 short-test:
-	g++ short-test.cpp -Wall -O3 -march=native -o short-test.x
+	g++ short-test.cpp -Wall -pedantic -O3 -march=native -o short-test.x
 
 graph:
 	g++ graph.cpp p_var_real.cpp -Wall -O3 -march=native -o graph.x

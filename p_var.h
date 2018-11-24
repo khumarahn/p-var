@@ -34,48 +34,36 @@ namespace p_var_dist_ns {
 	template <class point_t>
 	auto dist(const point_t & a, const point_t & b);
 }
+// alias for the type of distance function
+template <typename point_t>
+using dist_func_t = decltype(p_var_dist_ns::dist(std::declval<point_t>(), std::declval<point_t>()))(*) (const point_t &, const point_t &);
 
 // forward declaration of the p-variation backbone computation
 template <typename func_t, typename power_t>
 auto p_var_backbone(size_t path_size, power_t p, func_t path_dist);
 
-// *** INTERFACE ***
+// helper type aliases
+template <typename iterator_t>
+using iterator_value_t = typename std::iterator_traits<iterator_t>::value_type;
+template <typename container_t>
+using container_iterator_value_t = iterator_value_t<typename container_t::iterator>;
 
-// iterators, explicit distance function
-template <typename power_t, typename const_iterator_t, typename func_t>
-auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, func_t dist) {
-	auto path_dist = [&dist, path_begin](size_t a, size_t b) {
+
+// *** INTERFACE ***
+// iterators
+template <typename power_t, typename const_iterator_t, typename func_t = dist_func_t<iterator_value_t<const_iterator_t> > >
+auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, func_t dist = p_var_dist_ns::dist) {
+	auto path_dist = [&path_begin,&dist](size_t a, size_t b) {
 		return dist(*(path_begin + a), *(path_begin + b));
 	};
 	return p_var_backbone(path_end - path_begin, p, path_dist);
 }
-
-// iterators, no distance function, attempting Euclidean distance
-template <typename power_t, typename const_iterator_t>
-auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p) {
-	auto path_dist = [path_begin](size_t a, size_t b) {
-		return p_var_dist_ns::dist(*(path_begin + a), *(path_begin + b));
-	};
-	return p_var_backbone(path_end - path_begin, p, path_dist);
+// vector or array or else
+template <typename power_t, typename vector_t, typename func_t = dist_func_t<container_iterator_value_t<vector_t> > >
+auto p_var(vector_t path, power_t p, func_t dist = p_var_dist_ns::dist) {
+	return p_var(path.cbegin(), path.cend(), p, dist);
 }
 
-// vector, explicit distance function
-template <typename power_t, typename point_t, typename func_t>
-auto p_var(const std::vector<point_t>& path, power_t p, func_t dist) {
-	auto path_dist = [&path, &dist](size_t a, size_t b) {
-		return dist(path[a], path[b]);
-	};
-	return p_var_backbone(path.size(), p, path_dist);
-}
-
-// vector, no explicit distance function
-template <typename power_t, typename point_t>
-auto p_var(const std::vector<point_t>& path, power_t p) {
-	auto path_dist = [&path](size_t a, size_t b) {
-		return p_var_dist_ns::dist(path[a], path[b]);
-	};
-	return p_var_backbone(path.size(), p, path_dist);
-}
 
 // *** BACKBONE ***
 // Input:
