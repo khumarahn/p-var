@@ -29,38 +29,39 @@
 
 namespace p_var_ns {
 
-// forward declaration of the default distance function
-namespace p_var_dist_ns {
+namespace internal {
+	// forward declaration of the default distance function
 	template <class point_t>
 	auto dist(const point_t & a, const point_t & b);
+	// alias for the type of distance function
+	template <typename point_t>
+	using dist_func_t = decltype(internal::dist(std::declval<point_t>(), std::declval<point_t>()))(*) (const point_t &, const point_t &);
+
+	// helper type aliases
+	template <typename iterator_t>
+	using iterator_value_t = typename std::iterator_traits<iterator_t>::value_type;
+	template <typename container_t>
+	using container_iterator_value_t = iterator_value_t<typename container_t::iterator>;
 }
-// alias for the type of distance function
-template <typename point_t>
-using dist_func_t = decltype(p_var_dist_ns::dist(std::declval<point_t>(), std::declval<point_t>()))(*) (const point_t &, const point_t &);
 
 // forward declaration of the p-variation backbone computation
 template <typename func_t, typename power_t>
 auto p_var_backbone(size_t path_size, power_t p, func_t path_dist);
 
-// helper type aliases
-template <typename iterator_t>
-using iterator_value_t = typename std::iterator_traits<iterator_t>::value_type;
-template <typename container_t>
-using container_iterator_value_t = iterator_value_t<typename container_t::iterator>;
-
 
 // *** INTERFACE ***
 // iterators
-template <typename power_t, typename const_iterator_t, typename func_t = dist_func_t<iterator_value_t<const_iterator_t> > >
-auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, func_t dist = p_var_dist_ns::dist) {
+template <typename power_t, typename const_iterator_t,
+	 typename func_t = internal::dist_func_t<internal::iterator_value_t<const_iterator_t> > >
+auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, func_t dist = internal::dist) {
 	auto path_dist = [&path_begin,&dist](size_t a, size_t b) {
 		return dist(*(path_begin + a), *(path_begin + b));
 	};
 	return p_var_backbone(path_end - path_begin, p, path_dist);
 }
 // vector or array or else
-template <typename power_t, typename vector_t, typename func_t = dist_func_t<container_iterator_value_t<vector_t> > >
-auto p_var(vector_t path, power_t p, func_t dist = p_var_dist_ns::dist) {
+template <typename power_t, typename vector_t, typename func_t = internal::dist_func_t<internal::container_iterator_value_t<vector_t> > >
+auto p_var(vector_t path, power_t p, func_t dist = internal::dist) {
 	return p_var(path.cbegin(), path.cend(), p, dist);
 }
 
@@ -182,7 +183,7 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 	return run_p_var.back();
 }
 
-namespace p_var_dist_ns {
+namespace internal {
 	// We define a template function dist(a,b) for computing euclidean distance:
 	// for arithmetic and complex types : std::abs(b - a)
 	// for sequential container types and arrays it is defined recursively:
@@ -193,43 +194,43 @@ namespace p_var_dist_ns {
 	// for the underlying arithmetic or complex type
 	//
 	template <class point_t>
-		auto dist(const point_t & a, const point_t & b);
+	auto dist(const point_t & a, const point_t & b);
 
 	template<int I> struct rank : rank<I-1> { static_assert(I > 0, ""); };
 	template<> struct rank<0> {};
 
 	// integer type, distance is double
 	template <typename point_t>
-		auto euclidean_distance(point_t a, point_t b, rank<1>) ->
-		typename std::enable_if<std::is_integral<point_t>::value, double>::type
-		{
-			return decltype(std::sqrt(std::abs(b - a)))(std::abs(b - a));
-		}
+	auto euclidean_distance(point_t a, point_t b, rank<1>) ->
+	typename std::enable_if<std::is_integral<point_t>::value, double>::type
+	{
+		return decltype(std::sqrt(std::abs(b - a)))(std::abs(b - a));
+	}
 
 	// type without iterators, on which std::abs works, hopefully scalar
 	template <typename number_t>
-		auto euclidean_distance(const number_t & a, const number_t & b, rank<0>) ->
-		decltype(std::abs(b - a))
-		{
-			return std::abs(b - a);
-		}
+	auto euclidean_distance(const number_t & a, const number_t & b, rank<0>) ->
+	decltype(std::abs(b - a))
+	{
+		return std::abs(b - a);
+	}
 
 	// (nested) vector or array type
 	template<typename point_t>
-		auto euclidean_distance(const point_t & a, const point_t & b, rank<2>) ->
-		decltype(std::sqrt(dist(*std::cbegin(a), *std::cbegin(a))))
-		{
-			typedef decltype(dist(*std::begin(a), *std::begin(a))) return_t;
-			return std::sqrt(std::inner_product(std::begin(a), std::end(a), std::begin(b), return_t(0)
-						, std::plus<>()
-						, [](auto a, auto b) { auto ds = dist(a,b); return ds * ds; }
-						));
-		}
+	auto euclidean_distance(const point_t & a, const point_t & b, rank<2>) ->
+	decltype(std::sqrt(dist(*std::cbegin(a), *std::cbegin(a))))
+	{
+		typedef decltype(dist(*std::begin(a), *std::begin(a))) return_t;
+		return std::sqrt(std::inner_product(std::begin(a), std::end(a), std::begin(b), return_t(0)
+					, std::plus<>()
+					, [](auto a, auto b) { auto ds = dist(a,b); return ds * ds; }
+					));
+	}
 
 	// the main function template for dist(a,b)
 	template <class point_t>
-		auto dist(const point_t & a, const point_t & b) { return euclidean_distance(a, b, rank<2>()); }
+	auto dist(const point_t & a, const point_t & b) { return euclidean_distance(a, b, rank<2>()); }
 
-} // namespace p_var_dist_ns
+} // namespace internal
 
 } // namespace p_var_ns

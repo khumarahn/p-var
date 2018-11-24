@@ -109,7 +109,7 @@ std::vector<double> make_intermittent_path(int steps, double alpha = 0.6) {
 
 void test_dist_template()
 {
-	using p_var_ns::p_var_dist_ns::dist;
+	using p_var_ns::internal::dist;
 	std::vector<float> X = { 1., 2., 3. };
 	std::vector<float> Y = { 2., 4., 5. };
 	std::vector<std::vector<double>> XX = { {1., 2.}, { 3.,0.} };
