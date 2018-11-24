@@ -1,6 +1,5 @@
 // Copyright 2018 Alexey Korepanov & Terry Lyons
-#ifndef p_var_h__
-#define p_var_h__
+#pragma once
 
 /*
  * This file contains a template for p_var: a function for computing p-variation
@@ -19,41 +18,83 @@
  * 2. We do not take p-th root of the sum of increments.
  * 3. p-variation of an empty path is negative infinity.
  * 4. p-variation of a path with one point is zero.
+ * 5. If dist is omitted, we try a default function for Euclidean distance.
+ *    It works on scalar types and multidimensional arrays of scalars.
  */
 
 #include <cmath>
 #include <vector>
 #include <limits>
-#include <type_traits>
-#include "dist.h"
-#define DIST_FUNC_TYPE decltype(dist(std::declval<typename std::iterator_traits<const_iterator_t>::value_type>(), std::declval<typename std::iterator_traits<const_iterator_t>::value_type>()))(*) (const typename std::iterator_traits<const_iterator_t>::value_type &, const typename std::iterator_traits<const_iterator_t>::value_type &)
-template <typename power_t, typename const_iterator_t, typename func_t = DIST_FUNC_TYPE>
-#undef DIST_FUNC_TYPE
-auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, func_t dist_ = dist)
--> decltype(pow(dist_(typename std::iterator_traits<const_iterator_t>::value_type(), typename std::iterator_traits<const_iterator_t>::value_type()), p)) {
-	typedef decltype(pow(dist_(typename std::iterator_traits<const_iterator_t>::value_type(), typename std::iterator_traits<const_iterator_t>::value_type()), p)) float_t;
-	typedef typename std::iterator_traits<const_iterator_t>::difference_type diff_t;
-	// this computation uses only p and two other things:
-	// path size
-	diff_t path_size = path_end - path_begin;
-	// distances between path[a] and path[b]:
-	auto path_dist = [&dist_, path_begin](diff_t a, diff_t b) {
-		return dist_(*(path_begin + a), *(path_begin + b));
+#include <numeric>
+
+namespace p_var_ns {
+
+namespace internal {
+	// forward declaration of the default distance function
+	template <class point_t>
+	auto dist(const point_t & a, const point_t & b);
+	// alias for the type of distance function
+	template <typename point_t>
+	using dist_func_t = decltype(dist<point_t>);
+
+	// helper type aliases
+	template <typename iterator_t>
+	using iterator_value_t = typename std::iterator_traits<iterator_t>::value_type;
+	template <typename container_t>
+	using container_iterator_value_t = iterator_value_t<typename container_t::iterator>;
+}
+
+// forward declaration of the p-variation backbone computation
+template <typename func_t, typename power_t>
+auto p_var_backbone(size_t path_size, power_t p, func_t path_dist);
+
+
+// *** INTERFACE ***
+// iterators
+template <typename power_t, typename const_iterator_t,
+	 typename func_t = internal::dist_func_t<internal::iterator_value_t<const_iterator_t> > >
+auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, func_t dist = internal::dist) {
+	auto path_dist = [&path_begin,&dist](size_t a, size_t b) {
+		return dist(*(path_begin + a), *(path_begin + b));
 	};
+	return p_var_backbone(path_end - path_begin, p, path_dist);
+}
+// vector or array or else
+template <typename power_t, typename vector_t, typename func_t = internal::dist_func_t<internal::container_iterator_value_t<vector_t> > >
+auto p_var(vector_t path, power_t p, func_t dist = internal::dist) {
+	return p_var(path.cbegin(), path.cend(), p, dist);
+}
+
+
+// *** BACKBONE ***
+// Input:
+// * path_size >= 0
+// * p >= 1
+// * path_dist(a, b), a function defined for all a,b in 0,...,path_size-1,
+//   such that path_dist(a,b) + path_dist(b,c) <= path_dist(a,c)
+//   and path_dist(a,b) = path_dist(b,a)
+// Output:
+// \max \sum_k path_dist(a_k, a_{k+1})^p
+// over all increasing subsequences a_k of 0,...,path_size-1
+template <typename func_t, typename power_t>
+auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
+{
+        typedef decltype(path_dist(0, 0)) dist_t;
+        typedef decltype(std::pow(path_dist(0, 0), p)) real_t;
 
 	if (path_size == 0) {
-		return -std::numeric_limits<float_t>::infinity();
+		return -std::numeric_limits<real_t>::infinity();
 	}
 	else if (path_size == 1) {
-		return float_t(0);
+		return real_t(0);
 	}
 
 	// running p-variation
-	std::vector<float_t> run_p_var(path_size, 0);
+	std::vector<real_t> run_p_var(path_size, 0);
 
 	// compute N = log2(path_size)
-	diff_t N = 0;
-	for (diff_t n = path_size; n >>= 1; ) {
+	size_t N = 0;
+	for (size_t n = path_size; n >>= 1; ) {
 		N++;
 	}
 
@@ -61,34 +102,34 @@ auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, fu
 	// for 0 <= j < path_size and 1 <= n <= N,
 	//   ind(j, n) = max { path_dist(k, k + m)  :  k = (j << n) >> n  and  0 <= m < (1 << n) }
 	// we store ind(j, n) in ind[ind_n(j,n)] with a suitable function ind_n
-	std::vector<float_t> ind(path_size, 0);
-	auto ind_n = [&N](diff_t j, diff_t n) {
+	std::vector<dist_t> ind(path_size, 0);
+	auto ind_n = [&N](size_t j, size_t n) {
 		return (1 << (N-n)) - 1 + (j >> n);
 	};
 
-	float_t max_p_var = float_t(0);
+	real_t max_p_var = real_t(0);
 
-	for (diff_t j = 1; j < path_size; j++) {
+	for (size_t j = 1; j < path_size; j++) {
 		// update ind
-		for (diff_t n = 1; n <= N; n++) {
-			diff_t k = (j >> n) << n;
-			float_t &i = ind[ind_n(j, n)];
-			i = std::max<float_t>(i, path_dist(k, j));
+		for (size_t n = 1; n <= N; n++) {
+			size_t k = (j >> n) << n;
+			dist_t &i = ind[ind_n(j, n)];
+			i = std::max<dist_t>(i, path_dist(k, j));
 		}
 
 		// compute max_p_var = p-variation of path[0..j] as
 		//   max{run_p_var[m] + path_dist(m, j)^p}
 		// as m goes through j-1,...,0
-		diff_t m = j - 1;
-		float_t delta = 0;
-		diff_t delta_m = j;
-		for (diff_t n=N;;) {
-			diff_t k = (m >> n) << n;
+		size_t m = j - 1;
+		real_t delta = 0;
+		size_t delta_m = j;
+		for (size_t n=N;;) {
+			size_t k = (m >> n) << n;
 			// using spatial index, we skip all m >= k when n > 0 and
 			// ind[ind_n(m, n)] + path_dist(k, j) < (max_p_var - run_p_var[m])^(1/p)
 			bool skip = false;
 			if (n > 0) {
-				float_t id = ind[ind_n(m, n)] + path_dist(k, j);
+				dist_t id = ind[ind_n(m, n)] + path_dist(k, j);
 				if (delta >= id) {
 					skip = true;
 				}
@@ -117,9 +158,9 @@ auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, fu
 					n--;
 				}
 				else {
-					float_t d = path_dist(m, j);
+					dist_t d = path_dist(m, j);
 					if (d > delta) {
-						max_p_var = std::max<float_t>(max_p_var, run_p_var[m] + std::pow(d, p));
+						max_p_var = std::max<real_t>(max_p_var, run_p_var[m] + std::pow(d, p));
 					}
 
 					if (m > 0) {
@@ -142,12 +183,51 @@ auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, fu
 	return run_p_var.back();
 }
 
-#define DIST_FUNC_TYPE decltype(dist(std::declval<point_t>(), std::declval<point_t>()))(*) (const point_t &, const point_t &)
-template <typename power_t, typename point_t, typename  func_t=DIST_FUNC_TYPE>
-#undef DIST_FUNC_TYPE
-auto p_var(const std::vector<point_t>& path, power_t p, func_t dist_ = dist)
--> decltype(pow(dist_(std::declval<point_t>(), std::declval<point_t>()), p)) {
-	return p_var(std::cbegin(path), std::cend(path), p, dist_);
-}
+namespace internal {
+	// We define a template function dist(a,b) for computing euclidean distance:
+	// for arithmetic and complex types : std::abs(b - a)
+	// for sequential container types and arrays it is defined recursively:
+	// sqrt(sum(dist(x_i,y_i)^2))
+	// and is terminated by reaching an arithmetic or complex type.
+	//
+	// dist(a,b) returns the the distance in the type returned by sqrt
+	// for the underlying arithmetic or complex type
+	
+	template<int I> struct rank : rank<I-1> { static_assert(I > 0, ""); };
+	template<> struct rank<0> {};
 
-#endif // p_var_h__
+	// integer type, distance is double
+	template <typename point_t>
+	auto euclidean_distance(point_t a, point_t b, rank<1>) ->
+	typename std::enable_if<std::is_integral<point_t>::value, double>::type
+	{
+		return decltype(std::sqrt(std::abs(b - a)))(std::abs(b - a));
+	}
+
+	// type without iterators, on which std::abs works, hopefully scalar
+	template <typename number_t>
+	auto euclidean_distance(const number_t & a, const number_t & b, rank<0>) ->
+	decltype(std::abs(b - a))
+	{
+		return std::abs(b - a);
+	}
+
+	// (nested) vector or array type
+	template<typename point_t>
+	auto euclidean_distance(const point_t & a, const point_t & b, rank<2>) ->
+	decltype(std::sqrt(dist(*std::cbegin(a), *std::cbegin(a))))
+	{
+		typedef decltype(dist(*std::begin(a), *std::begin(a))) return_t;
+		return std::sqrt(std::inner_product(std::begin(a), std::end(a), std::begin(b), return_t(0)
+					, std::plus<>()
+					, [](auto a, auto b) { auto ds = dist(a,b); return ds * ds; }
+					));
+	}
+
+	// the main function template for dist(a,b)
+	template <class point_t>
+	auto dist(const point_t & a, const point_t & b) { return euclidean_distance(a, b, rank<2>()); }
+
+} // namespace internal
+
+} // namespace p_var_ns
