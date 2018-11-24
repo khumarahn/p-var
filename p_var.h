@@ -192,10 +192,7 @@ namespace internal {
 	//
 	// dist(a,b) returns the the distance in the type returned by sqrt
 	// for the underlying arithmetic or complex type
-	//
-	template <class point_t>
-	auto dist(const point_t & a, const point_t & b);
-
+	
 	template<int I> struct rank : rank<I-1> { static_assert(I > 0, ""); };
 	template<> struct rank<0> {};
 
