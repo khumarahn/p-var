@@ -75,21 +75,6 @@ namespace p_var_real {
 		return(out);
 	}
 
-	// create `prt` list from x and partition that is already known. No checking, just getting iterators and
-	PrtList CreateBasicPrt(const NumericVector& x, const NumericVector& partition){
-
-		int n = partition.size();
-		int i = 0;
-		PrtList out (n);
-
-		for(PrtList::iterator it=out.begin(); it!=out.end(); it++){
-			(*it).id = partition[i]-1;
-			i++;
-		}
-
-		return out;
-	}
-
 	// finds(updates) all necessary attributes of `prt` list. `prt` must have good ids.
 	void prepare_prt(const NumericVector& x, std::list<pvpoint>& prt,  const double& p){
 

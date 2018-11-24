@@ -80,17 +80,17 @@ template <typename func_t, typename power_t>
 auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 {
         typedef decltype(path_dist(0, 0)) dist_t;
-        typedef decltype(std::pow(path_dist(0, 0), p)) float_t;
+        typedef decltype(std::pow(path_dist(0, 0), p)) real_t;
 
 	if (path_size == 0) {
-		return -std::numeric_limits<float_t>::infinity();
+		return -std::numeric_limits<real_t>::infinity();
 	}
 	else if (path_size == 1) {
-		return float_t(0);
+		return real_t(0);
 	}
 
 	// running p-variation
-	std::vector<float_t> run_p_var(path_size, 0);
+	std::vector<real_t> run_p_var(path_size, 0);
 
 	// compute N = log2(path_size)
 	size_t N = 0;
@@ -107,7 +107,7 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 		return (1 << (N-n)) - 1 + (j >> n);
 	};
 
-	float_t max_p_var = float_t(0);
+	real_t max_p_var = real_t(0);
 
 	for (size_t j = 1; j < path_size; j++) {
 		// update ind
@@ -121,7 +121,7 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 		//   max{run_p_var[m] + path_dist(m, j)^p}
 		// as m goes through j-1,...,0
 		size_t m = j - 1;
-		float_t delta = 0;
+		real_t delta = 0;
 		size_t delta_m = j;
 		for (size_t n=N;;) {
 			size_t k = (m >> n) << n;
@@ -160,7 +160,7 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 				else {
 					dist_t d = path_dist(m, j);
 					if (d > delta) {
-						max_p_var = std::max<float_t>(max_p_var, run_p_var[m] + std::pow(d, p));
+						max_p_var = std::max<real_t>(max_p_var, run_p_var[m] + std::pow(d, p));
 					}
 
 					if (m > 0) {

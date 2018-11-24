@@ -65,7 +65,7 @@ unsigned int random_seed(unsigned int & seed) {
 	return seed;
 }
 
-std::vector<double> make_brownian_path(double sd, int steps) {
+std::vector<double> make_brownian_path(double sd, size_t steps) {
 	unsigned int seed;
 	std::default_random_engine generator(random_seed(seed));
 	std::normal_distribution<double> gauss_dist(0.0, sd);
