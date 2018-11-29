@@ -165,7 +165,7 @@ namespace p_var_real {
 		//     Some points might be dropped out before actual checking, but experiment showed, that it is not worthwhile.
 		// 2. Sequentially check all possible joints. If any increase is detected, then all middle points are insignificant.
 
-		if (a==v or v==b) return ; // nothing to calculate, exit the procedure.
+		if (a==v || v==b) return ; // nothing to calculate, exit the procedure.
 
 		double amin, amax, bmin, bmax, ev, balance, maxbalance, jfoin, takefjoin;
 		it_PrtList prt_it, prt_ait, prt_bit;

@@ -35,7 +35,7 @@ namespace internal {
 	auto dist(const point_t & a, const point_t & b);
 	// alias for the type of distance function
 	template <typename point_t>
-	using dist_func_t = decltype(dist<point_t>);
+	using dist_func_t = decltype(dist(std::declval<point_t>(), std::declval<point_t>()))(*) (const point_t &, const point_t &);
 
 	// helper type aliases
 	template <typename iterator_t>
@@ -62,7 +62,7 @@ auto p_var(const_iterator_t path_begin, const_iterator_t path_end, power_t p, fu
 // vector or array or else
 template <typename power_t, typename vector_t, typename func_t = internal::dist_func_t<internal::container_iterator_value_t<vector_t> > >
 auto p_var(vector_t path, power_t p, func_t dist = internal::dist) {
-	return p_var(path.cbegin(), path.cend(), p, dist);
+	return p_var(std::cbegin(path), std::cend(path), p, dist);
 }
 
 
