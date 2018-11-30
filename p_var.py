@@ -27,24 +27,26 @@ def p_var_backbone(path_size, p, path_dist):
     ind = [0.0] * ind_size
     def ind_n(j, n):
         return ind_offset[n-1] + (j >> n)
+    def ind_k(j, n):
+        return min(((j >> n) << n) + (1 << (n-1)), path_size - 1);
 
     max_p_var = 0.0
     run_p_var = [0.0] * path_size
 
-    for j in range(1, path_size):
+    for j in range(0, path_size):
         for n in range(1, N + 1):
-            k = (j >> n) << n
-            ind[ind_n(j,n)] = max(ind[ind_n(j,n)], path_dist(k, j))
+            ind[ind_n(j,n)] = max(ind[ind_n(j, n)], path_dist(ind_k(j, n), j))
+        if j == 0:
+            continue
 
         m = j - 1
         delta = 0.0
         delta_m = j
         n = N
         while True:
-            k = (m >> n) << n
             skip = False
             if n > 0:
-                iid = ind[ind_n(m, n)] + path_dist(k, j)
+                iid = ind[ind_n(m, n)] + path_dist(ind_k(m, n), j)
                 if delta >= iid:
                     skip = True
                 elif m < delta_m:
@@ -54,6 +56,7 @@ def p_var_backbone(path_size, p, path_dist):
                         skip = True
 
             if skip:
+                k = (m >> n) << n
                 if k > 0:
                     m = k - 1
                     while n < N and (k >> n) % 2 == 0:

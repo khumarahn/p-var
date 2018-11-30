@@ -100,7 +100,7 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 
 	// spatial index:
 	// for 0 <= j < path_size and 1 <= n <= N,
-	//   ind(j, n) = max { path_dist(k, k + m)  :  k = (j << n) >> n  and  0 <= m < (1 << n) }
+	//   ind(j, n) = max { path_dist(k, k + m)  :  k = ((j << n) >> n) + (1 << (n-1))  and  0 <= m < (1 << n) }
 	// we store ind(j, n) in ind[ind_n(j,n)] with a suitable function ind_n
 	std::vector<size_t> ind_offset(N,0);
 	for (size_t ip = path_size, n = 0; n < N; n++){
@@ -115,15 +115,20 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 	auto ind_n = [&ind_offset](size_t j, size_t n) {
 		return ind_offset[n-1] + (j >> n);
 	};
+	auto ind_k = [path_size](size_t j, size_t n) {
+		return std::min<size_t>(((j >> n) << n) + (1 << (n-1)), path_size - 1);
+	};
 
 	real_t max_p_var = real_t(0);
 
-	for (size_t j = 1; j < path_size; j++) {
+	for (size_t j = 0; j < path_size; j++) {
 		// update ind
 		for (size_t n = 1; n <= N; n++) {
-			size_t k = (j >> n) << n;
 			dist_t &i = ind[ind_n(j, n)];
-			i = std::max<dist_t>(i, path_dist(k, j));
+			i = std::max<dist_t>(i, path_dist(ind_k(j, n), j));
+		}
+		if (j == 0) {
+			continue;
 		}
 
 		// compute max_p_var = p-variation of path[0..j] as
@@ -133,12 +138,11 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 		real_t delta = 0;
 		size_t delta_m = j;
 		for (size_t n=N;;) {
-			size_t k = (m >> n) << n;
 			// using spatial index, we skip all m >= k when n > 0 and
-			// ind[ind_n(m, n)] + path_dist(k, j) < (max_p_var - run_p_var[m])^(1/p)
+			// ind[ind_n(m, n)] + path_dist(ind_k(m, n), j) < (max_p_var - run_p_var[m])^(1/p)
 			bool skip = false;
 			if (n > 0) {
-				dist_t id = ind[ind_n(m, n)] + path_dist(k, j);
+				dist_t id = ind[ind_n(m, n)] + path_dist(ind_k(m, n), j);
 				if (delta >= id) {
 					skip = true;
 				}
@@ -152,6 +156,7 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 			}
 
 			if (skip) {
+				size_t k = (m >> n) << n;
 				if (k > 0) {
 					m = k - 1;
 					while (n < N && (k>>n) % 2 == 0) {
