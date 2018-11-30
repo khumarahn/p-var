@@ -8,6 +8,7 @@ set ylabel "p-variation"
 set logscale y
 set ytics nomirror
 set y2label "seconds"
+set xrange [1:8]
 unset logscale y2
 set y2tics
 plot "graph.log" using 1:2 with lines title "p-var",\
