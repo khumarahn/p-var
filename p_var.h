@@ -92,9 +92,11 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 	// running p-variation
 	std::vector<real_t> run_p_var(path_size, 0);
 
+	size_t s = path_size - 1;
+
 	// compute N = log2(path_size)
 	size_t N = 1;
-	for (size_t n = path_size; n >>= 1; ) {
+	while (s >> N) {
 		N++;
 	}
 
@@ -102,21 +104,12 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 	// for 0 <= j < path_size and 1 <= n <= N,
 	//   ind(j, n) = max { path_dist(k, k + m)  :  k = ((j << n) >> n) + (1 << (n-1))  and  0 <= m < (1 << n) }
 	// we store ind(j, n) in ind[ind_n(j,n)] with a suitable function ind_n
-	std::vector<size_t> ind_offset(N,0);
-	for (size_t ip = path_size, n = 0; n < N; n++){
-		ip = (ip % 2) + (ip >> 1);
-		ind_offset[n] = ip + ((n==0) ? 0 : ind_offset[n-1]);
-	}
-	size_t ind_size = ind_offset[N-1];
-	for (size_t n = 0; n < N; n++) {
-		ind_offset[n] = ind_size - ind_offset[n];
-	}
-	std::vector<dist_t> ind(ind_size, 0.0);
-	auto ind_n = [&ind_offset](size_t j, size_t n) {
-		return ind_offset[n-1] + (j >> n);
+	std::vector<dist_t> ind(s, 0.0);
+	auto ind_n = [s](size_t j, size_t n) {
+		return (s >> n) + (j >> n);
 	};
-	auto ind_k = [path_size](size_t j, size_t n) {
-		return std::min<size_t>(((j >> n) << n) + (1 << (n-1)), path_size - 1);
+	auto ind_k = [s](size_t j, size_t n) {
+		return std::min<size_t>(((j >> n) << n) + (1 << (n-1)), s);
 	};
 
 	real_t max_p_var = real_t(0);
@@ -124,8 +117,10 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 	for (size_t j = 0; j < path_size; j++) {
 		// update ind
 		for (size_t n = 1; n <= N; n++) {
-			dist_t &i = ind[ind_n(j, n)];
-			i = std::max<dist_t>(i, path_dist(ind_k(j, n), j));
+			if (!(j >> n == s >> n && (s >> (n-1)) % 2 == 0)) {
+				dist_t &i = ind[ind_n(j, n)];
+				i = std::max<dist_t>(i, path_dist(ind_k(j, n), j));
+			}
 		}
 		if (j == 0) {
 			continue;
@@ -138,6 +133,10 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 		real_t delta = 0;
 		size_t delta_m = j;
 		for (size_t n=N;;) {
+			while (n > 0 && m >> n == s >> n && (s >> (n-1)) % 2 == 0) {
+				n--;
+			}
+
 			// using spatial index, we skip all m >= k when n > 0 and
 			// ind[ind_n(m, n)] + path_dist(ind_k(m, n), j) < (max_p_var - run_p_var[m])^(1/p)
 			bool skip = false;

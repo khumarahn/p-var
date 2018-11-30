@@ -8,34 +8,24 @@ def p_var_backbone(path_size, p, path_dist):
     elif path_size == 1:
         return 0
 
+    s = path_size - 1
     N = 1
-    Nn = path_size
-    while True:
-        Nn >>= 1
-        if Nn == 0:
-            break
+    while s >> N != 0:
         N += 1
-    
-    ind_offset = [0] * N
-    ip = path_size
-    for n in range(0, N):
-        ip = (ip % 2) + (ip >> 1)
-        ind_offset[n] = ip + (0 if n==0 else ind_offset[n-1])
-    ind_size = ind_offset[N-1]
-    for n in range(0, N):
-        ind_offset[n] = ind_size - ind_offset[n]
-    ind = [0.0] * ind_size
+
+    ind = [0.0] * s
     def ind_n(j, n):
-        return ind_offset[n-1] + (j >> n)
+        return (s >> n) + (j >> n)
     def ind_k(j, n):
-        return min(((j >> n) << n) + (1 << (n-1)), path_size - 1);
+        return min(((j >> n) << n) + (1 << (n-1)), s);
 
     max_p_var = 0.0
     run_p_var = [0.0] * path_size
 
     for j in range(0, path_size):
         for n in range(1, N + 1):
-            ind[ind_n(j,n)] = max(ind[ind_n(j, n)], path_dist(ind_k(j, n), j))
+            if not(j >> n == s >> n and (s >> (n-1)) % 2 == 0):
+                ind[ind_n(j, n)] = max(ind[ind_n(j, n)], path_dist(ind_k(j, n), j))
         if j == 0:
             continue
 
@@ -44,6 +34,9 @@ def p_var_backbone(path_size, p, path_dist):
         delta_m = j
         n = N
         while True:
+            while n > 0 and m >> n == s >> n and (s >> (n-1)) % 2 == 0:
+                n -= 1;
+
             skip = False
             if n > 0:
                 iid = ind[ind_n(m, n)] + path_dist(ind_k(m, n), j)
