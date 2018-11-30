@@ -93,7 +93,7 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 	std::vector<real_t> run_p_var(path_size, 0);
 
 	// compute N = log2(path_size)
-	size_t N = 0;
+	size_t N = 1;
 	for (size_t n = path_size; n >>= 1; ) {
 		N++;
 	}
@@ -102,9 +102,18 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 	// for 0 <= j < path_size and 1 <= n <= N,
 	//   ind(j, n) = max { path_dist(k, k + m)  :  k = (j << n) >> n  and  0 <= m < (1 << n) }
 	// we store ind(j, n) in ind[ind_n(j,n)] with a suitable function ind_n
-	std::vector<dist_t> ind(path_size, 0);
-	auto ind_n = [&N](size_t j, size_t n) {
-		return (1 << (N-n)) - 1 + (j >> n);
+	std::vector<size_t> ind_offset(N,0);
+	for (size_t ip = path_size, n = 0; n < N; n++){
+		ip = (ip % 2) + (ip >> 1);
+		ind_offset[n] = ip + ((n==0) ? 0 : ind_offset[n-1]);
+	}
+	size_t ind_size = ind_offset[N-1];
+	for (size_t n = 0; n < N; n++) {
+		ind_offset[n] = ind_size - ind_offset[n];
+	}
+	std::vector<dist_t> ind(ind_size, 0.0);
+	auto ind_n = [&ind_offset](size_t j, size_t n) {
+		return ind_offset[n-1] + (j >> n);
 	};
 
 	real_t max_p_var = real_t(0);
@@ -164,7 +173,6 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 					}
 
 					if (m > 0) {
-						n = 0;
 						while (n < N  &&  (m>>n) % 2 == 0) {
 							n++;
 						}
