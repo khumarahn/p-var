@@ -10,18 +10,21 @@ def p_var_backbone(path_size, p, path_dist):
     # Input:
     # * path_size >= 0 integer
     # * p >= 1 real
-    # * path_dist: metric on the set {0,...,path_dist-1};
-    #   I.e. path_dist(a,b) needs to be defined and nonnegative
+    # * path_dist: metric on the set {0,...,path_dist-1}.
+    #   Namely, path_dist(a,b) needs to be defined and nonnegative
     #   for all integer 0 <= a,b < path_dist, be symmetric and
     #   satisfy the triangle inequality:
     #   * path_dist(a,b) = path_dist(b,a)
     #   * path_dist(a,b) + path_dist(b,c) >= path_dist(a,c)
+    #   Indiscernibility is not necessary, so path_dist may not
+    #   be a metric in the strict sense.
     # Output:
-    # * max sum_k path_dist(a_k, a_{k-1})^p
+    # * max sum_k path_dist(a_{k-1}, a_k)^p
     # over all strictly increasing subsequences a_k of 0,...,path_size-1
     # Notes:
     # * if path_size == 0, the result is -math.inf
     # * if path_size == 1, the result is 0
+
     if path_size == 0:
         return -math.inf
     elif path_size == 1:
@@ -119,7 +122,7 @@ def ex_sq():
         p += 0.5
 
 def ex_bm():
-    # Example: Broownian motion made of iid -1/+1 increments
+    # Example: Brownian motion made of iid -1/+1 increments
     n = 2500
     print(f'\nPoor man\'s Brownian path with {n} steps:')
     path = [0.0] * (n + 1)
@@ -139,8 +142,8 @@ def ex_bm():
         print(f'{p:5f}-variation: {pv:8e}, error {pv_err:8e}; time: {pv_time:6f}; reference time: {pv_ref_time:6f}')
 
 def ex_bm_long():
-    # Example: Broownian motion made of iid -1/+1 increments
-    print('\nVery poor man\'s very long Brownian motion:')
+    # Example: long Brownian motion made of iid -1/+1 increments, no error check
+    print('\nVery poor man\'s very long Brownian path:')
     for n in [0,1,10,100,1000,10000,100000,1000000, 10000000]:
         path = [0.0] * (n + 1)
         sigma = 1. / math.sqrt(max(n,1))
