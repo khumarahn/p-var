@@ -26,6 +26,7 @@
 #include <vector>
 #include <limits>
 #include <numeric>
+#include <iterator>
 
 namespace p_var_ns {
 
