@@ -69,11 +69,11 @@ auto p_var(vector_t path, power_t p, func_t dist = internal::dist) {
 
 // *** BACKBONE ***
 // Input:
-// * path_size >= 0
-// * p >= 1
-// * path_dist(a, b), a function defined for all a,b in 0,...,path_size-1,
-//   such that path_dist(a,b) + path_dist(b,c) <= path_dist(a,c)
-//   and path_dist(a,b) = path_dist(b,a)
+// * path_size >= 0 integer
+// * p >= 1 real
+// * path_dist(a, b), a function defined for all 0 <= a,b < path_size such that
+//   a)  path_dist(a,b) + path_dist(b,c) <= path_dist(a,c)
+//   b)  path_dist(a,b) = path_dist(b,a)
 // Output:
 // \max \sum_k path_dist(a_k, a_{k+1})^p
 // over all increasing subsequences a_k of 0,...,path_size-1
@@ -95,7 +95,6 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 
 	size_t s = path_size - 1;
 
-	// compute N = log2(path_size)
 	size_t N = 1;
 	while (s >> N) {
 		N++;
@@ -103,8 +102,11 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 
 	// spatial index:
 	// for 0 <= j < path_size and 1 <= n <= N,
-	//   ind(j, n) = max { path_dist(k, k + m)  :  k = ((j << n) >> n) + (1 << (n-1))  and  0 <= m < (1 << n) }
-	// we store ind(j, n) in ind[ind_n(j,n)] with a suitable function ind_n
+	// * let  a = (j << n) >> n  and  b = min{a + (1 >> n), path_size}
+	//   think of [a,b) is a "level n diadic interval" containing j
+	// * choose k = ind_k(j, n) so that it is somewhere in the middle of [a,b)
+	// * compute ind(j, n) = max { path_dist(k, m) : a <= m < b}
+	// * store ind(j, n) in a flat array ind[] at position ind_n(j,n) with a suitable function ind_n
 	std::vector<dist_t> ind(s, 0.0);
 	auto ind_n = [s](size_t j, size_t n) {
 		return (s >> n) + (j >> n);
@@ -138,7 +140,7 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 				n--;
 			}
 
-			// using spatial index, we skip all m >= k when n > 0 and
+			// using spatial index, we skip all m >= ((m << n) >> n) when n > 0 and
 			// ind[ind_n(m, n)] + path_dist(ind_k(m, n), j) < (max_p_var - run_p_var[m])^(1/p)
 			bool skip = false;
 			if (n > 0) {
@@ -205,7 +207,7 @@ namespace internal {
 	//
 	// dist(a,b) returns the the distance in the type returned by sqrt
 	// for the underlying arithmetic or complex type
-	
+
 	template<int I> struct rank : rank<I-1> { static_assert(I > 0, ""); };
 	template<> struct rank<0> {};
 
