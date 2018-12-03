@@ -54,7 +54,7 @@ def p_var_backbone(path_size, p, path_dist):
         m = j - 1
         delta = 0.0
         delta_m = j
-        n = N
+        n = 0
         while True:
             while n > 0 and m >> n == s >> n and (s >> (n-1)) % 2 == 0:
                 n -= 1;

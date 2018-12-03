@@ -133,7 +133,7 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 		size_t m = j - 1;
 		real_t delta = 0;
 		size_t delta_m = j;
-		for (size_t n=N;;) {
+		for (size_t n=0;;) {
 			while (n > 0 && m >> n == s >> n && (s >> (n-1)) % 2 == 0) {
 				n--;
 			}
