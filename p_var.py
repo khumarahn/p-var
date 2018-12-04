@@ -48,7 +48,7 @@ def p_var_backbone(path_size, p, path_dist):
     max_p_var = 0.0
     run_p_var = [0.0] * path_size
 
-    point_links = [0.0] * path_size
+    point_links = [0] * path_size
 
     for j in range(0, path_size):
         for n in range(1, N + 1):
