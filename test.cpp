@@ -91,12 +91,12 @@ std::vector<double> make_intermittent_path(int steps, double alpha = 0.6) {
 	auto phi = [](double x) {
 		return x - 0.5;
 	};
-	
+
 	unsigned int seed;
 	std::default_random_engine generator(random_seed(seed));
 	std::uniform_real_distribution<double> unif(0.0, 1.0);
 	double x = unif(generator);
-	
+
 	std::vector<double> path(steps + 1);
 	path[0] = 0.;
 	double norm = std::pow(steps + 1, -alpha);
@@ -130,7 +130,37 @@ void test_dist_template()
 		dist(0, 3);
 }
 
-// the test code
+// test the sequence returned by p_var:
+// compute p-variation over that sequence and return abs difference
+template<typename p_var_ret_t, typename power_t, typename path_t,
+	typename func_t = p_var_ns::internal::dist_func_t<p_var_ns::internal::container_iterator_value_t<path_t> > >
+auto p_var_points_check(p_var_ret_t r, power_t p, path_t path, func_t path_dist = p_var_ns::internal::dist) {
+
+	typedef decltype(r.value) real_t;
+
+	if (r.points.size() == 0) {
+		if (r.value == -std::numeric_limits<real_t>::infinity()) {
+			return real_t(0);
+		} else {
+			return std::numeric_limits<real_t>::infinity();
+		}
+	}
+
+	if (r.points.size() == 1) {
+		return std::abs(r.value);
+	}
+
+	real_t v = 0;
+	for (size_t k = 1; k < r.points.size(); k++) {
+		auto a = path[r.points[k-1]];
+		auto b = path[r.points[k]];
+		v += std::pow(path_dist(a,b), p);
+	}
+
+	return std::abs(v - r.value);
+}
+
+
 int main() {
 	using std::cout;
 	int test_no = 0;
@@ -146,7 +176,7 @@ int main() {
 	// check a long periodic path 0,1,4,0,1,4,...
 	{
 		cout << "\n*** TEST " << ++test_no << " ***\n";
-		size_t rep = 100000;
+		size_t rep = 1000;
 		std::vector<double> path(rep * 4);
 		for (size_t j = 0; j < path.size(); j++) {
 			switch (j % 4) {
@@ -166,11 +196,13 @@ int main() {
 		}
 		cout << "Long periodic path: 0,1,1,4 repeated " << rep << " times\n";
 		for (double p = 1.0; p < 3.01; p += 0.5) {
-			//double pv = p_var(path, p, distR1);
-			double pv = p_var(path, p);
+			auto pv = p_var(path, p);
 			double pv_ref = std::pow(4, p) * (2 * rep - 1);
-			cout << "  " << p << "-variation: " << pv
-				<< ", error: " << pv - pv_ref
+			double pv_err = std::abs(pv.value - pv_ref);
+			double pv_points_err = p_var_points_check(pv, p, path);
+			cout << "  " << p << "-variation: " << pv.value
+				<< ", sequence length: " << pv.points.size()
+				<< ", error: " << pv_err + pv_points_err
 				<< "\n";
 		}
 	}
@@ -187,11 +219,13 @@ int main() {
 			<< path[0] << ", " << path[1] << ", " << path[2]
 			<< ", ... , " << path.back() << "\n";
 		for (double p = 1.0; p < 3.01; p += 0.5) {
-			//double pv = p_var(path, p, distR1);
-			double pv = p_var(path, p);
+			auto pv = p_var(path, p);
 			double pv_ref = 1.0;
-			cout << "  " << p << "-variation: " << pv
-				<< ", error: " << pv - pv_ref
+			double pv_err = std::abs(pv.value - pv_ref);
+			double pv_points_err = p_var_points_check(pv, p, path);
+			cout << "  " << p << "-variation: " << pv.value
+				<< ", sequence length: " << pv.points.size()
+				<< ", error: " << pv_err + pv_points_err
 				<< "\n";
 		}
 	}
@@ -212,10 +246,9 @@ int main() {
 		cout << "cumulative p-variation:\n";
 		for (double p = 1.0; p < 3.01; p += 0.5) {
 			cout << "  p=" << p << ": ";
-			double pv = 0;
 			auto it = path.begin();
 			for (;;) {
-				pv = p_var(path.begin(), it, p);
+				double pv = p_var(path.begin(), it, p).value;
 				cout << pv;
 				if (it == path.end()) {
 					break;
@@ -225,8 +258,18 @@ int main() {
 					cout << ", ";
 				}
 			}
+			auto pv = p_var(path, p);
 			double pv_ref = (p > 2) ? std::pow(2.0, p*0.5 + 1.) : 4;
-			cout << ";  error at the end: " << pv - pv_ref << "\n";
+			double pv_err = std::abs(pv.value - pv_ref);
+			double pv_points_err = p_var_points_check(pv, p, path);
+			cout << ";\n      at the end sequence: {";
+			for (auto a = pv.points.begin(); a != pv.points.end(); a++) {
+				if (a != pv.points.begin()) {
+					cout << " ";
+				}
+				cout << *a;
+			}
+			cout << "}, error: " << pv_err + pv_points_err << "\n";
 		}
 	}
 
@@ -234,21 +277,7 @@ int main() {
 	{
 		cout << "\n*** TEST " << ++test_no << " ***\n";
 		double p = 3;
-		size_t steps = 3;
-		std::vector<vecRd> path(steps + 1);
-		for (size_t j = 0; j < path.size(); j++) {
-			for (size_t k = 0; k < d; k++) {
-				if (k == 0 && (j % 4 == 2 || j % 4 == 3)) {
-					path[j][k] = 1;
-				}
-				else if (k == 1 && (j % 4 == 0 || j % 4 == 1)) {
-					path[j][k] = 1;
-				}
-				else {
-					path[j][k] = 0;
-				}
-			}
-		}
+		std::array<std::array<double, 2>, 8> path = {{{0,1}, {1,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}}};
 		cout << "Simple path:";
 		for (size_t j = 0; j < path.size(); j++) {
 			cout << " (" << path[j][0];
@@ -258,16 +287,32 @@ int main() {
 			cout << ")";
 		}
 		cout << "\n";
-		double pv = p_var(path, p, distRd);
-		double pv_ref = pow(2.0, p);
-		cout << "  " << p << "-variation wrt L^1 distance: " << pv
-			<< ", error: " << pv - pv_ref
-			<< "\n";
-		double pv2 = p_var(path, p);
-		double pv_ref2 = pow(2.0, 0.5*p);
-		cout << "  " << p << "-variation wrt Euclidean distance: " << pv2
-			<< ", error: " << pv2 - pv_ref2
-			<< "\n";
+		auto pv = p_var(path, p, distRd);
+		double pv_ref = 1.0 + pow(2.0, p);
+		double pv_err = std::abs(pv.value - pv_ref);
+		double pv_points_err = p_var_points_check(pv, p, path, distRd);
+		cout << "  " << p << "-variation wrt L^1 distance: " << pv.value
+			<< ", sequence {";
+		for (auto a = pv.points.begin(); a != pv.points.end(); a++) {
+			if (a != pv.points.begin()) {
+				cout << " ";
+			}
+			cout << *a;
+		}
+		cout << "}, error: " << pv_err + pv_points_err << "\n";
+		auto pv2 = p_var(path, p);
+		double pv2_ref = 1.0 + pow(2.0, 0.5*p);
+		double pv2_err = std::abs(pv2.value - pv2_ref);
+		double pv2_points_err = p_var_points_check(pv2, p, path);
+		cout << "  " << p << "-variation wrt Euclidean distance: " << pv2.value
+			<< ", sequence {";
+		for (auto a = pv2.points.begin(); a != pv2.points.end(); a++) {
+			if (a != pv2.points.begin()) {
+				cout << " ";
+			}
+			cout << *a;
+		}
+		cout << "}, error: " << pv2_err + pv2_points_err << "\n";
 	}
 
 	// compare to reference on random Brownian paths
@@ -281,11 +326,11 @@ int main() {
 		for (size_t c = 0; c < count; c++) {
 			double sd = 1 / sqrt(double(steps));
 			std::vector<double> path = make_brownian_path(sd, steps);
-			//double pv = p_var(path, p, distR1);
-			double pv = p_var(path, p);
+			auto pv = p_var(path, p);
 			double pv_ref = p_var_real::pvar(path, p);
-			double err = std::abs(pv_ref - pv);
-			max_err = std::max(max_err, err);
+			double pv_err = std::abs(pv.value - pv_ref);
+			double pv_points_err = p_var_points_check(pv, p, path);
+			max_err = std::max(max_err, pv_err + pv_points_err);
 		}
 		cout << count << " random Brownian paths of length " << steps
 			<< " compared to reference\n";
@@ -300,16 +345,17 @@ int main() {
 			<< "benchmarking against the real line specific method\n"
 			<< std::setw(15) << "Length"
 			<< std::setw(15) << "p-variation"
+			<< std::setw(15) << "Seq length"
 			<< std::setw(15) << "Seconds"
 			<< std::setw(15) << "R mthd secs"
-			<< std::setw(15) << "Answers diff"
+			<< std::setw(15) << "Error"
 			<< "\n";
 		for (size_t steps = 1; steps <= 10000000; steps *= 10) {
 			double sd = 1 / sqrt(double(steps));
 			std::vector<double> path = make_brownian_path(sd, steps);
 
 			clock_t clock_begin = std::clock();
-			double pv = p_var(path, p);
+			auto pv = p_var(path, p);
 			clock_t clock_end = std::clock();
 
 			clock_t ref_clock_begin = std::clock();
@@ -319,35 +365,40 @@ int main() {
 			double elapsed_secs = double(clock_end - clock_begin) / CLOCKS_PER_SEC;
 			double ref_elapsed_secs = double(ref_clock_end - ref_clock_begin) / CLOCKS_PER_SEC;
 
+			double pv_err = std::abs(pv.value - pv_ref);
+			double pv_points_err = p_var_points_check(pv, p, path);
+
 			cout	<< std::setw(15) << steps
-				<< std::setw(15) << pv
+				<< std::setw(15) << pv.value
+				<< std::setw(15) << pv.points.size()
 				<< std::setw(15) << elapsed_secs
 				<< std::setw(15) << ref_elapsed_secs
-				<< std::setw(15) << pv - pv_ref
+				<< std::setw(15) << pv_err + pv_points_err
 				<< "\n";
 		}
 	}
-	
+
 	// benchmark
 	{
 		cout << "\n*** TEST " << ++test_no << ": INTERMITTENT (LEVY) BENCHMARK ***\n";
 		double alpha = 0.6;
-		double p = 1. / alpha + 0.1;
+		double p = 1. / alpha + 0.25;
 		cout << "Computing p-variation with p=" << p << " for long paths generated by\n"
 			<< "an intermittent dynamical system (LSV map in Levy regime),\n"
 			<< "such paths have long monotone excursions;\n"
 			<< "benchmarking against the real line specific method\n"
 			<< std::setw(15) << "Length"
 			<< std::setw(15) << "p-variation"
+			<< std::setw(15) << "Seq length"
 			<< std::setw(15) << "Seconds"
 			<< std::setw(15) << "R mthd secs"
-			<< std::setw(15) << "Answers diff"
+			<< std::setw(15) << "Error"
 			<< "\n";
 		for (size_t steps = 1; steps <= 10000000; steps *= 10) {
 			std::vector<double> path = make_intermittent_path(steps, alpha);
 
 			clock_t clock_begin = std::clock();
-			double pv = p_var(path, p);
+			auto pv = p_var(path, p);
 			clock_t clock_end = std::clock();
 
 			clock_t ref_clock_begin = std::clock();
@@ -357,11 +408,15 @@ int main() {
 			double elapsed_secs = double(clock_end - clock_begin) / CLOCKS_PER_SEC;
 			double ref_elapsed_secs = double(ref_clock_end - ref_clock_begin) / CLOCKS_PER_SEC;
 
+			double pv_err = std::abs(pv.value - pv_ref);
+			double pv_points_err = p_var_points_check(pv, p, path);
+
 			cout	<< std::setw(15) << steps
-				<< std::setw(15) << pv
+				<< std::setw(15) << pv.value
+				<< std::setw(15) << pv.points.size()
 				<< std::setw(15) << elapsed_secs
 				<< std::setw(15) << ref_elapsed_secs
-				<< std::setw(15) << pv - pv_ref
+				<< std::setw(15) << pv_err + pv_points_err
 				<< "\n";
 		}
 	}

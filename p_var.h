@@ -6,15 +6,17 @@
  * in a metric space.
  *
  * Usage:
- * 1. p_var(path, p, dist)
- * where path is a vector, dist is a distance function and p is a positive real number.
- * 2. p_var(iterator_begin, iterator_end, p, dist)
- * if the path is in a container with random access iterators.
- * p_var(path, p, dist) is the same as p_var(path.begin(), path.end(), p, dist)
+ *   auto pv =  p_var(path, p, dist)
+ * where path is a vector/array, dist is a distance function and p >= 1 is real, or
+ *   auto pv = p_var(iterator_begin, iterator_end, p, dist)
+ * if path is in a container with random access iterators.
+ * Then:
+ *   pv.value is the p-variation of the path,
+ *   pv.points is the maximising subsequence in a vector<size_t>.
  * See test.cpp for examples and benchmarks.
  *
  * Notes:
- * 1. Return type is that of std::pow(dist(), p).
+ * 1. Return type for p-varitaion is that of std::pow(dist(), p).
  * 2. We do not take p-th root of the sum of increments.
  * 3. p-variation of an empty path is negative infinity.
  * 4. p-variation of a path with one point is zero.
@@ -26,6 +28,7 @@
 #include <vector>
 #include <limits>
 #include <numeric>
+#include <algorithm>
 #include <iterator>
 
 namespace p_var_ns {
@@ -75,19 +78,29 @@ auto p_var(vector_t path, power_t p, func_t dist = internal::dist) {
 //   a)  path_dist(a,b) + path_dist(b,c) <= path_dist(a,c)
 //   b)  path_dist(a,b) = path_dist(b,a)
 // Output:
-// \max \sum_k path_dist(a_k, a_{k+1})^p
-// over all increasing subsequences a_k of 0,...,path_size-1
+// a structure with two elements:
+// * .value: real, \max \sum_k path_dist(a_k, a_{k+1})^p
+//            over all increasing subsequences a_k of 0,...,path_size-1
+// * .points: vector<size_t>, the maximizing subsequence a_k
 template <typename func_t, typename power_t>
 auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 {
         typedef decltype(path_dist(0, 0)) dist_t;
         typedef decltype(std::pow(path_dist(0, 0), p)) real_t;
 
+	struct ret_t {
+		real_t value;
+		std::vector<size_t> points;
+	} ret;
+
 	if (path_size == 0) {
-		return -std::numeric_limits<real_t>::infinity();
+		ret.value = -std::numeric_limits<real_t>::infinity();
+		return ret;
 	}
 	else if (path_size == 1) {
-		return real_t(0);
+		ret.value = 0;
+		ret.points.push_back(0);
+		return ret;
 	}
 
 	// running p-variation
@@ -114,6 +127,11 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 	auto ind_k = [s](size_t j, size_t n) {
 		return std::min<size_t>(((j >> n) << n) + (1 << (n-1)), s);
 	};
+
+	// to compute the maximizing sequence, we save "point links":
+	// point_links[b] = a  when the interval [a, b] is the last one
+	// in the maximising partition of [0,...,b]
+	std::vector<size_t> point_links(path_size, 0);
 
 	real_t max_p_var = real_t(0);
 
@@ -175,8 +193,12 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 				}
 				else {
 					dist_t d = path_dist(m, j);
-					if (d > delta) {
-						max_p_var = std::max<real_t>(max_p_var, run_p_var[m] + std::pow(d, p));
+					if (d >= delta) {
+						real_t new_p_var = run_p_var[m] + std::pow(d, p);
+						if (new_p_var >= max_p_var) {
+							max_p_var = new_p_var;
+							point_links[j] = m;
+						}
 					}
 
 					if (m > 0) {
@@ -195,7 +217,18 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 		run_p_var[j] = max_p_var;
 	}
 
-	return run_p_var.back();
+	ret.value = run_p_var.back();
+
+	// points
+	for (size_t a = s; ; a = point_links[a]) {
+		ret.points.push_back(a);
+		if (a == 0) {
+			break;
+		}
+	}
+	std::reverse(ret.points.begin(), ret.points.end());
+
+	return ret;
 }
 
 namespace internal {
