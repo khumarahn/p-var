@@ -27,12 +27,12 @@ def p_var_backbone(path_size, p, path_dist):
     # * if path_size == 0, the result is .p_var = -math.inf, .points = []
     # * if path_size == 1, the result is .p_var = 0,         .points = [0]
 
-    ret = collections.namedtuple('p_var', ['p_var', 'points'])
+    ret = collections.namedtuple('p_var', ['value', 'points'])
 
     if path_size == 0:
-        return ret(p_var = -math.inf, points = [])
+        return ret(value = -math.inf, points = [])
     elif path_size == 1:
-        return ret(p_var = 0, points = [0])
+        return ret(value = 0, points = [0])
 
     s = path_size - 1
     N = 1
@@ -110,7 +110,7 @@ def p_var_backbone(path_size, p, path_dist):
             break
         point_i = point_links[point_i]
     points.reverse()
-    return ret(p_var = run_p_var[-1], points = points)
+    return ret(value = run_p_var[-1], points = points)
 
 def p_var_backbone_ref(path_size, p, path_dist):
     # Reference implementation of p_var_backbone, does not need the triangle inequality
@@ -126,23 +126,23 @@ def p_var_backbone_ref(path_size, p, path_dist):
     return cum_p_var[-1]
 
 def p_var_points_check(p_var_ret, p, path_dist):
-    # Check the output of p_var_backbone: whether the p-variation p_var_ret.p_var
+    # Check the output of p_var_backbone: whether the p-variation p_var_ret.value
     # is indeed reached on the sequence p_var_ret.points.
     # Return abs value of the error.
 
     if len(p_var_ret.points) == 0:
-        if p_var_ret.p_var == -math.inf:
+        if p_var_ret.value == -math.inf:
             return 0
         else:
             return math.inf
 
     if len(p_var_ret.points) == 1:
-        return math.abs(p_var_ret.p_var)
+        return math.abs(p_var_ret.value)
 
     v = 0.0
     for k in range(1, len(p_var_ret.points)):
         v += pow(path_dist(p_var_ret.points[k-1], p_var_ret.points[k]), p)
-    return abs(v - p_var_ret.p_var)
+    return abs(v - p_var_ret.value)
 
 def ex_sq():
     # Example: unit square
@@ -154,8 +154,8 @@ def ex_sq():
     while p <= 4.0:
         pv = p_var_backbone(len(path), p, dist)
         pv_ref = p_var_backbone_ref(len(path), p, dist)
-        pv_err = abs(pv.p_var - pv_ref) + p_var_points_check(pv, p, dist)
-        print(f'{p:5.2f}-variation: {pv.p_var:7.2f}, error {pv_err:.2e}, sequence {pv.points}')
+        pv_err = abs(pv.value - pv_ref) + p_var_points_check(pv, p, dist)
+        print(f'{p:5.2f}-variation: {pv.value:7.2f}, error {pv_err:.2e}, sequence {pv.points}')
         p += 0.5
 
 def ex_bm():
@@ -175,8 +175,8 @@ def ex_bm():
         pv_ref_start = time.time()
         pv_ref = p_var_backbone_ref(len(path), p, dist)
         pv_ref_time = time.time() - pv_ref_start
-        pv_err = abs(pv.p_var - pv_ref) + p_var_points_check(pv, p, dist)
-        print(f'{p:5.2f}-variation: {pv.p_var:7.2f}, sequence length: {len(pv.points):5d}, error {pv_err:.2e}, time: {pv_time:7.2f}, reference time: {pv_ref_time:7.2f}')
+        pv_err = abs(pv.value - pv_ref) + p_var_points_check(pv, p, dist)
+        print(f'{p:5.2f}-variation: {pv.value:7.2f}, sequence length: {len(pv.points):5d}, error {pv_err:.2e}, time: {pv_time:7.2f}, reference time: {pv_ref_time:7.2f}')
 
 def ex_bm_long():
     # Example: long Brownian motion made of iid -1/+1 increments, no error check
@@ -192,7 +192,7 @@ def ex_bm_long():
         pv_start = time.time()
         pv = p_var_backbone(len(path), p, dist)
         pv_time = time.time() - pv_start
-        print(f'{n:10d} steps: {p:5.2f}-variation: {pv.p_var:7.2f}, sequence length: {len(pv.points):5d}, time: {pv_time:7.2f}')
+        print(f'{n:10d} steps: {p:5.2f}-variation: {pv.value:7.2f}, sequence length: {len(pv.points):5d}, time: {pv_time:7.2f}')
 
 ex_sq()
 ex_bm()
