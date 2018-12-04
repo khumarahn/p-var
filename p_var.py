@@ -89,7 +89,7 @@ def p_var_backbone(path_size, p, path_dist):
                     n -= 1
                 else:
                     d = path_dist(m, j)
-                    if d > delta:
+                    if d >= delta:
                         new_p_var = run_p_var[m] + pow(d, p)
                         if new_p_var >= max_p_var:
                             max_p_var = new_p_var
@@ -146,7 +146,7 @@ def p_var_points_check(p_var_ret, p, path_dist):
 
 def ex_sq():
     # Example: unit square
-    path = [[0,0], [0,1], [1,1], [1,0], [0,0]]
+    path = [[0,0], [0,1], [1,1], [1,0], [0,0], [0,0], [0,0], [0,0]]
     dist = lambda a, b: math.sqrt(pow(path[b][0] - path[a][0], 2) + pow(path[b][1] - path[a][1], 2))
 
     print(f'\nSquare path: {path}\nwith L^2 distance')
