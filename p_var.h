@@ -230,8 +230,8 @@ namespace internal {
 	auto euclidean_distance(const point_t & a, const point_t & b, rank<2>) ->
 	decltype(std::sqrt(dist(*std::cbegin(a), *std::cbegin(a))))
 	{
-		typedef decltype(dist(*std::begin(a), *std::begin(a))) return_t;
-		return std::sqrt(std::inner_product(std::begin(a), std::end(a), std::begin(b), return_t(0)
+		typedef decltype(dist(*std::cbegin(a), *std::cbegin(a))) return_t;
+		return std::sqrt(std::inner_product(std::cbegin(a), std::cend(a), std::cbegin(b), return_t(0)
 					, std::plus<>()
 					, [](auto a, auto b) { auto ds = dist(a,b); return ds * ds; }
 					));
