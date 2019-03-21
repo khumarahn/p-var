@@ -37,8 +37,12 @@ int main () {
 	// create a path
 	std::vector<vecR2> path({{0,0}, {1,1}});
 
-	std::cout << "3-variation wrt L^1 distance: " << p_var(path, 3, dist) << std::endl;
-	std::cout << "3-variation wrt Euclidean distance: " << p_var(path, 3) << std::endl;
+	auto pv = p_var(path, 3, dist);
+	// pv.value is the p-variation, and
+	// pv.points is vector<size_t> with the maximising subsequence
+
+	std::cout << "3-variation wrt L^1 distance: " << pv.value << std::endl;
+	std::cout << "3-variation wrt Euclidean distance: " << p_var(path, 3).value << std::endl;
 
 	return 0;
 }

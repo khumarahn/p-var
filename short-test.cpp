@@ -19,8 +19,8 @@ int main () {
 	//std::vector<vecR2> path {{0,0}, {1,1}};
 	vecR2 path[2]{ {0,0}, {1,1} };
 
-	std::cout << "3-variation wrt L^1 distance: " << p_var(path, 3, dist) << std::endl;
-	std::cout << "3-variation wrt Euclidean distance: " << p_var(path, 3) << std::endl;
+	std::cout << "3-variation wrt L^1 distance: " << p_var(path, 3, dist).value << std::endl;
+	std::cout << "3-variation wrt Euclidean distance: " << p_var(path, 3).value << std::endl;
 
 	return 0;
 }
