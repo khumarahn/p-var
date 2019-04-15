@@ -137,7 +137,7 @@ def p_var_points_check(p_var_ret, p, path_dist):
             return math.inf
 
     if len(p_var_ret.points) == 1:
-        return math.abs(p_var_ret.value)
+        return abs(p_var_ret.value)
 
     v = 0.0
     for k in range(1, len(p_var_ret.points)):
