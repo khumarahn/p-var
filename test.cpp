@@ -197,8 +197,9 @@ int main() {
 		cout << "Long periodic path: 0,1,1,4 repeated " << rep << " times\n";
 		for (double p = 1.0; p < 3.01; p += 0.5) {
 			auto pv = p_var(path, p);
+                        double pv_real = p_var_real::pvar(path, p);
 			double pv_ref = std::pow(4, p) * (2 * rep - 1);
-			double pv_err = std::abs(pv.value - pv_ref);
+			double pv_err = std::abs(pv.value - pv_ref) + std::abs(pv_real - pv_ref);
 			double pv_points_err = p_var_points_check(pv, p, path);
 			cout << "  " << p << "-variation: " << pv.value
 				<< ", sequence length: " << pv.points.size()
@@ -220,8 +221,9 @@ int main() {
 			<< ", ... , " << path.back() << "\n";
 		for (double p = 1.0; p < 3.01; p += 0.5) {
 			auto pv = p_var(path, p);
+                        double pv_real = p_var_real::pvar(path, p);
 			double pv_ref = 1.0;
-			double pv_err = std::abs(pv.value - pv_ref);
+			double pv_err = std::abs(pv.value - pv_ref) + std::abs(pv_real - pv_ref);
 			double pv_points_err = p_var_points_check(pv, p, path);
 			cout << "  " << p << "-variation: " << pv.value
 				<< ", sequence length: " << pv.points.size()
