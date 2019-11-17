@@ -14,6 +14,8 @@ But it does not work for example in R<sup>2</sup>. Here we rectify this, at leas
 We provide a short C++ function which computes p-variation in a general metric space,
 and is sufficiently fast for paths with millions of points.
 
+In addition, we improve the speed of the one-dimensional algorithm by a factor of 2 to 3.
+
 ## Usage
 Below is a minimal working example. Details and important notes are in [`p_var.h`](p_var.h).
 ```
@@ -54,3 +56,8 @@ perhaps N log(N). But its worst case complexity is N<sup>2</sup>.
 This happens in pathological situations such as monotone paths in R.
 The [one-dimensional method](https://link.springer.com/article/10.1007/s10986-018-9414-3)
 works with such paths much faster.
+
+## Authors and contributors (in alphabetic order)
+* Alexey Korepanov
+* Terry Lyons
+* Pavel Zorin-Kranich
