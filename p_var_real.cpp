@@ -3,6 +3,9 @@
 // Vygantas Butkus <Vygantas.Butkus@gmail.com>
 // Pavel Zorin-Kranich <pzorin@uni-bonn.de>
 
+#include <cmath>
+#include <list>
+
 #include "p_var_real.h"
 
 namespace p_var_real {
