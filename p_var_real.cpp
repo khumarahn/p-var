@@ -7,18 +7,19 @@
 #include <list>
 
 #include "p_var_real.h"
+#include <bits/stdint-uintn.h>
 
 namespace p_var_real {
 	// -------------------------------- definitions of types  ---------------------------------- //
 	struct pointdata {
-		size_t prev, next; // emulate double-linked list
+		uint32_t prev, next; // emulate double-linked list
 		double pvdiff; // Difference to previous
 	};
 	
 	typedef std::vector<pointdata> DoublyLinkedList;    // list of admissible points, in form of forward and backward links
 	
 	struct pvtemppoint{
-		size_t it;
+		uint32_t it;
 		double ev;
 	};
 	
@@ -30,17 +31,17 @@ namespace p_var_real {
 	
 	// find local extrema and put them in a doubly linked list
 	void DetectLocalExtrema(const NumericVector& x, DoublyLinkedList & links, const double p){
-		size_t last_extremum = 0;
+		uint32_t last_extremum = 0;
 		int direction = 0;
 		bool new_extremum = false;
-		size_t n = x.size();
+		uint32_t n = x.size();
 		
 		links.front().prev = 0;
 		links.front().pvdiff = 0.0;
 		links.back().next = n;
 		
-		for(size_t i = 0 ; i<n ; i++) {
-			size_t j = i+1;
+		for(uint32_t i = 0 ; i<n ; i++) {
+			uint32_t j = i+1;
 			if (j != n) {
 				if (x[j]>x[i]){
 					new_extremum = (direction == -1);
@@ -74,9 +75,9 @@ namespace p_var_real {
 		double csum = 0;
 		double fjoinval;
 		
-		size_t int_begin, int_end;
+		uint32_t int_begin, int_end;
 		int_begin = int_end = 0;
-		for (size_t dcount = 0; dcount<3; dcount++) {
+		for (uint32_t dcount = 0; dcount<3; dcount++) {
 			int_end = links[int_end].next;
 			if (int_end == x.size()) {
 				return; // no intervals of this length
@@ -101,7 +102,7 @@ namespace p_var_real {
 				links[int_end].pvdiff = fjoinval;
 				// backtrack, because we don't know if the changed intervals are significant
 				csum = 0;
-				for (size_t dcount = 0; dcount<3; dcount++) {
+				for (uint32_t dcount = 0; dcount<3; dcount++) {
 					if (int_begin >  0) {
 						csum += links[int_begin].pvdiff;
 						int_begin = links[int_begin].prev;
@@ -118,7 +119,7 @@ namespace p_var_real {
 	}
 	
 	// Merge optimal intervals. LSI is the length of optimal intervals in the beginning.
-	void MergeIntervalsRecursively(const NumericVector& x, DoublyLinkedList & links, const double& p, const size_t LSI=2){
+	void MergeIntervalsRecursively(const NumericVector& x, DoublyLinkedList & links, const double& p, const uint32_t LSI=2){
 		
 		// Main principle:
 		// 1. Put endpoints of optimal intervals in IterList
@@ -131,7 +132,7 @@ namespace p_var_real {
 		
 		// merge two intervals ([a, v] and [v, b]) which are known to be good.
 		// Captures temporary variables by reference to avoid multiple allocation
-		auto Merge2GoodInt = [&](size_t a, size_t v, size_t b){
+		auto Merge2GoodInt = [&](uint32_t a, uint32_t v, uint32_t b){
 			
 			// Main principle:
 			// 1. Find potential points in intervals [a,v) and (v, b]
@@ -143,7 +144,7 @@ namespace p_var_real {
 			if (a==v || v==b) return ; // nothing to calculate, exit the procedure.
 			
 			double amin, amax, bmin, bmax, ev, balance, maxbalance, fjoin, takefjoin;
-			size_t prt_it;
+			uint32_t prt_it;
 			pvtemppoint pvtp;
 			
 			// 1. ### Find potential points
@@ -233,9 +234,9 @@ namespace p_var_real {
 			}
 		};
 		
-		size_t it = 0;
-		std::list<size_t> IterList;
-		std::list<size_t>::iterator a_IL, v_IL, b_IL;
+		uint32_t it = 0;
+		std::list<uint32_t> IterList;
+		std::list<uint32_t>::iterator a_IL, v_IL, b_IL;
 		
 		// 1. ### Finding all the intervals that will be merged
 		int count = 0;
@@ -286,13 +287,14 @@ namespace p_var_real {
 		}
 		
 		DoublyLinkedList links(x.size());
+
 		DetectLocalExtrema(x, links,  p);
 		CheckShortIntervals(x, links, p);
 		MergeIntervalsRecursively(x, links, p, 4);
 		
 		// output:
 		double pvalue=0;
-		size_t i = 0;
+		uint32_t i = 0;
 		while ( i < x.size() ){
 			pvalue += links[i].pvdiff;
 			i = links[i].next;
