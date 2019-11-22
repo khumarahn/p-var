@@ -3,6 +3,9 @@
 // Vygantas Butkus <Vygantas.Butkus@gmail.com>
 // Pavel Zorin-Kranich <pzorin@uni-bonn.de>
 
+#include <cmath>
+#include <list>
+
 #include "p_var_real.h"
 
 namespace p_var_real {
@@ -246,18 +249,26 @@ namespace p_var_real {
 		IterList.push_back (x.size()-1);
 		
 		// ### 2. Merging pairs of interval until everything is merged.
+		// std::list<T>::size has constant complexity since C++11
 		while(IterList.size()>2){
-			a_IL = v_IL = IterList.begin();
-			++v_IL;
-			b_IL = v_IL;
-			++b_IL;
-			while((b_IL!=IterList.end()) & (v_IL!=IterList.end())){
-				Merge2GoodInt(*a_IL, *v_IL, *b_IL);
-				a_IL = IterList.erase(v_IL);
+			a_IL = IterList.begin();
+			while (true){
+				// we are guaranteed that a_IL != IterList.end() here
 				v_IL = a_IL;
 				++v_IL;
-				b_IL = v_IL;
-				++b_IL;
+				if (v_IL != IterList.end())
+				{
+					b_IL = v_IL;
+					++b_IL;
+					if (b_IL != IterList.end()){
+						Merge2GoodInt(*a_IL, *v_IL, *b_IL);
+						a_IL = IterList.erase(v_IL); // now a_IL == b_IL
+					} else {
+						break;
+					}
+				} else {
+					break;
+				}
 			}
 		}
 	}
