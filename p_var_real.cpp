@@ -35,18 +35,21 @@ namespace p_var_real {
 		int direction = 0;
 		bool new_extremum = false;
 		uint32_t n = x.size();
-		
-		links.front().prev = 0;
-		links.front().pvdiff = 0.0;
-		links.back().next = n;
+		double cur_value = x[0];
+		double last_value = cur_value;
+		double next_value;
+		pointdata last_link;
+		last_link.prev = 0;
+		last_link.pvdiff = 0.0;
 		
 		for(uint32_t i = 0 ; i<n ; i++) {
 			uint32_t j = i+1;
 			if (j != n) {
-				if (x[j]>x[i]){
+				next_value = x[j];
+				if (next_value>cur_value){
 					new_extremum = (direction == -1);
 					direction = 1;
-				} else if(x[j]<x[i]) {
+				} else if(next_value<cur_value) {
 					new_extremum = (direction == 1);
 					direction = -1;
 				} else {
@@ -57,12 +60,17 @@ namespace p_var_real {
 				new_extremum = true;
 			}
 			if (new_extremum) {
-				links[last_extremum].next = i;
-				links[i].prev = last_extremum;
-				links[i].pvdiff = pvar_diff(x[i] - x[last_extremum], p);
+				last_link.next = i;
+				links[last_extremum] = last_link;
+				last_link.prev = last_extremum;
+				last_link.pvdiff = pvar_diff(cur_value - last_value, p);
 				last_extremum = i;
+				last_value = cur_value;
 			}
+			cur_value = next_value;
 		}
+		last_link.next = n;
+		links.back() = last_link;
 	}
 	
 	// Make sure that all intervals of length 3 are optimal
@@ -77,9 +85,10 @@ namespace p_var_real {
 		
 		uint32_t int_begin, int_end;
 		int_begin = int_end = 0;
+		uint32_t n = x.size();
 		for (uint32_t dcount = 0; dcount<3; dcount++) {
 			int_end = links[int_end].next;
-			if (int_end == x.size()) {
+			if (int_end == n) {
 				return; // no intervals of this length
 			}
 			csum += links[int_end].pvdiff;
@@ -89,7 +98,7 @@ namespace p_var_real {
 			fjoinval = pvar_diff(x[int_begin] - x[int_end], p);
 			if (csum >= fjoinval){ // mid points are significant, continue to next interval
 				int_end = links[int_end].next;
-				if (int_end == x.size()) {
+				if (int_end == n) {
 					return; // no next interval
 				}
 				int_begin = links[int_begin].next;
@@ -98,17 +107,16 @@ namespace p_var_real {
 			} else { // mid points are redundant, erase them
 				links[int_begin].next = int_end;
 				links[int_end].prev = int_begin;
-				int_begin = int_end;
 				links[int_end].pvdiff = fjoinval;
 				// backtrack, because we don't know if the changed intervals are significant
-				csum = 0;
-				for (uint32_t dcount = 0; dcount<3; dcount++) {
+				csum = fjoinval;
+				for (uint32_t dcount = 1; dcount<3; dcount++) {
 					if (int_begin >  0) {
 						csum += links[int_begin].pvdiff;
 						int_begin = links[int_begin].prev;
 					} else {
 						int_end = links[int_end].next;
-						if (int_end == x.size()) {
+						if (int_end == n) {
 							return; // no next interval
 						}
 						csum += links[int_end].pvdiff;
@@ -127,8 +135,6 @@ namespace p_var_real {
 		
 		// temporary data used by Merge2GoodInt. Declaring it here avoids allocating/deallocating it at each call of Merge2GoodInt.
 		std::vector<pvtemppoint> av_mins, av_maxs, vb_mins, vb_maxs;
-		std::vector<pvtemppoint>::iterator ait, bit, tait, tbit, sbit;
-		
 		
 		// merge two intervals ([a, v] and [v, b]) which are known to be good.
 		// Captures temporary variables by reference to avoid multiple allocation
@@ -144,6 +150,7 @@ namespace p_var_real {
 			if (a==v || v==b) return ; // nothing to calculate, exit the procedure.
 			
 			double amin, amax, bmin, bmax, ev, balance, maxbalance, fjoin, takefjoin;
+			std::vector<pvtemppoint>::iterator ait, bit, tait, tbit, sbit;
 			uint32_t prt_it;
 			pvtemppoint pvtp;
 			
@@ -165,8 +172,7 @@ namespace p_var_real {
 					pvtp.it = prt_it;
 					pvtp.ev = ev;
 					av_maxs.push_back (pvtp);
-				}
-				if(x[prt_it]<amin){
+				} else if(x[prt_it]<amin){
 					amin = x[prt_it];
 					pvtp.it = prt_it;
 					pvtp.ev = ev;
@@ -186,8 +192,7 @@ namespace p_var_real {
 					pvtp.it = prt_it;
 					pvtp.ev = ev;
 					vb_maxs.push_back (pvtp);
-				}
-				if( x[prt_it]<bmin){
+				} else if( x[prt_it]<bmin){
 					bmin = x[prt_it];
 					pvtp.it = prt_it;
 					pvtp.ev = ev;
