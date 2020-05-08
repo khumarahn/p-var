@@ -194,6 +194,7 @@ def ex_bm_long():
         pv_time = time.time() - pv_start
         print(f'{n:10d} steps: {p:5.2f}-variation: {pv.value:7.2f}, sequence length: {len(pv.points):5d}, time: {pv_time:7.2f}')
 
-ex_sq()
-ex_bm()
-ex_bm_long()
+if __name__ == "__main__":
+    ex_sq()
+    ex_bm()
+    ex_bm_long()
