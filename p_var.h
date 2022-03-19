@@ -1,4 +1,5 @@
 // Copyright 2018 Alexey Korepanov & Terry Lyons
+//           2022 Pavel Zorin-Kranich
 #pragma once
 
 /*
@@ -116,7 +117,7 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 	// spatial index:
 	// for 0 <= j < path_size and 1 <= n <= N,
 	// * let  a = (j >> n) << n  and  b = min{a + (1 << n), path_size}
-	//   think of [a,b) is a "level n diadic interval" containing j
+	//   think of [a,b) as a "level n diadic interval" containing j
 	// * choose k = center(j, n) so that it is somewhere in the middle of [a,b)
 	// * compute radius(j, n) = max { path_dist(k, m) : a <= m < b}
 	// * store radius(j, n) in a flat array radius[] at position ind_n(j,n) with a suitable function ind_n
