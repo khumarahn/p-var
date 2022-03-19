@@ -106,7 +106,7 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 	// running p-variation
 	std::vector<real_t> run_p_var(path_size, 0);
 
-	size_t s = path_size - 1;
+	const size_t s = path_size - 1;
 
 	size_t N = 1;
 	while (s >> N) {
@@ -115,17 +115,20 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 
 	// spatial index:
 	// for 0 <= j < path_size and 1 <= n <= N,
-	// * let  a = (j << n) >> n  and  b = min{a + (1 >> n), path_size}
+	// * let  a = (j >> n) << n  and  b = min{a + (1 << n), path_size}
 	//   think of [a,b) is a "level n diadic interval" containing j
-	// * choose k = ind_k(j, n) so that it is somewhere in the middle of [a,b)
-	// * compute ind(j, n) = max { path_dist(k, m) : a <= m < b}
-	// * store ind(j, n) in a flat array ind[] at position ind_n(j,n) with a suitable function ind_n
-	std::vector<dist_t> ind(s, 0.0);
+	// * choose k = center(j, n) so that it is somewhere in the middle of [a,b)
+	// * compute radius(j, n) = max { path_dist(k, m) : a <= m < b}
+	// * store radius(j, n) in a flat array radius[] at position ind_n(j,n) with a suitable function ind_n
+	std::vector<dist_t> radius(s, 0.0);
 	auto ind_n = [s](size_t j, size_t n) {
 		return (s >> n) + (j >> n);
 	};
-	auto ind_k = [s](size_t j, size_t n) {
-		return std::min<size_t>(((j >> n) << n) + (1 << (n-1)), s);
+	auto center = [](size_t j, size_t n) {
+		return ((j >> n) << n) + (1 << (n-1));
+	};
+	auto center_outside_range = [s](size_t j, size_t n) {
+		return (j >> n == s >> n && (s >> (n-1)) % 2 == 0); // equivalent to center(j,n) > s
 	};
 
 	// to compute the maximizing sequence, we save "point links":
@@ -136,11 +139,11 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 	real_t max_p_var = real_t(0);
 
 	for (size_t j = 0; j < path_size; j++) {
-		// update ind
+		// update radius
 		for (size_t n = 1; n <= N; n++) {
-			if (!(j >> n == s >> n && (s >> (n-1)) % 2 == 0)) {
-				dist_t &i = ind[ind_n(j, n)];
-				i = std::max<dist_t>(i, path_dist(ind_k(j, n), j));
+			if (!center_outside_range(j,n)) {
+				dist_t &r = radius[ind_n(j, n)];
+				r = std::max<dist_t>(r, path_dist(center(j, n), j));
 			}
 		}
 		if (j == 0) {
@@ -151,64 +154,44 @@ auto p_var_backbone(size_t path_size, power_t p, func_t path_dist)
 		//   max{run_p_var[m] + path_dist(m, j)^p}
 		// as m goes through j-1,...,0
 		size_t m = j - 1;
-		real_t delta = 0;
-		size_t delta_m = j;
-		for (size_t n=0;;) {
-			while (n > 0 && m >> n == s >> n && (s >> (n-1)) % 2 == 0) {
-				n--;
+		point_links[j] = m;
+		real_t delta = path_dist(m, j);
+		max_p_var = run_p_var[m] + std::pow(delta, p);
+		size_t n=0; // dyadic level
+		while (m>0) {
+			while (n < N  &&  (m>>n) % 2 == 0) {
+				n++;
 			}
-
-			// using spatial index, we skip all m >= ((m << n) >> n) when n > 0 and
-			// ind[ind_n(m, n)] + path_dist(ind_k(m, n), j) < (max_p_var - run_p_var[m])^(1/p)
-			bool skip = false;
-			if (n > 0) {
-				dist_t id = ind[ind_n(m, n)] + path_dist(ind_k(m, n), j);
-				if (delta >= id) {
-					skip = true;
-				}
-				else if (m < delta_m) {
-					delta = std::pow(max_p_var - run_p_var[m], 1. / p);
-					delta_m = m;
+			m--;
+			// Find maximal n such that we can skip from m to (m >> n) << n
+			// Skipping is possible if
+			// radius[ind_n(m, n)] + path_dist(center(m, n), j) < (max_p_var - run_p_var[m])^(1/p)
+			bool delta_needs_update = true;
+			for (; n > 0; n--) {
+				if (!center_outside_range(m,n)) {
+					const dist_t id = radius[ind_n(m, n)] + path_dist(center(m, n), j);
 					if (delta >= id) {
-						skip = true;
+						break;
+					}
+					else if (delta_needs_update) {
+						delta = std::pow(max_p_var - run_p_var[m], 1. / p);
+						delta_needs_update = false;
+						if (delta >= id) {
+							break;
+						}
 					}
 				}
 			}
-
-			if (skip) {
-				size_t k = (m >> n) << n;
-				if (k > 0) {
-					m = k - 1;
-					while (n < N && (k>>n) % 2 == 0) {
-						n++;
-					}
-				}
-				else {
-					break;
-				}
+			if (n > 0) {
+					m = (m >> n) << n;
 			}
 			else {
-				if (n > 1) {
-					n--;
-				}
-				else {
-					dist_t d = path_dist(m, j);
-					if (d >= delta) {
-						real_t new_p_var = run_p_var[m] + std::pow(d, p);
-						if (new_p_var >= max_p_var) {
-							max_p_var = new_p_var;
-							point_links[j] = m;
-						}
-					}
-
-					if (m > 0) {
-						while (n < N  &&  (m>>n) % 2 == 0) {
-							n++;
-						}
-						m--;
-					}
-					else {
-						break;
+				const dist_t d = path_dist(m, j);
+				if (d >= delta) {
+					const real_t new_p_var = run_p_var[m] + std::pow(d, p);
+					if (new_p_var >= max_p_var) {
+						max_p_var = new_p_var;
+						point_links[j] = m;
 					}
 				}
 			}
